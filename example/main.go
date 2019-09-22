@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 func main(){
-	t := *flag.String("t", "sleep", "use timer")
+	t := *flag.String("t", "funcTicker", "use timer")
 	flag.Parse()
 	switch t {
 	case "ticker":
@@ -15,19 +15,19 @@ func main(){
 		defer ticker.Stop()
 		for range ticker.C {
 		}
-	case "tickFunc":
-		ticker:=timer.NewTicker(time.Millisecond)
+	case "funcTicker":
+		ticker:=timer.NewFuncTicker(time.Millisecond,nil)
 		defer ticker.Stop()
-		ticker.TickFunc(func() {
+		ticker.Tick(func() {
 			//todo
 		})
 		select {
 		}
 	case "sleep":
 		for{
-			timer.Sleep(time.Microsecond*100)
+			timer.Sleep(time.Millisecond)
 		}
 	default:
-		fmt.Println("use  ticker, tickFunc or sleep")
+		fmt.Println("use  ticker, funcTicker or sleep")
 	}
 }

@@ -32,7 +32,7 @@ func (t *runtimeTimer) Start() {
 				Sleep(t.d)
 				if t.f!=nil{
 					t.f()
-				}else {
+				}else if t.arg!=nil{
 					t.arg<-time.Now()
 				}
 			}

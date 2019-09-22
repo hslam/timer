@@ -9,7 +9,7 @@ System |func   |1 us   |100 us|1 ms
 go     |Ticker     |146.3% |54.0% |12%
 go     |Sleep      |130.7% |24.2% |7.9%
 cgo    |Ticker     |124.8% |22.5% |6.6%
-cgo    |TickFunc   |46.5%  |5.2%  |1.9%
+cgo    |FuncTicker |46.5%  |5.2%  |1.9%
 cgo    |Sleep      |45.6%  |4.6%  |1.6%
 
 ## Get started
@@ -34,7 +34,7 @@ import (
 	"fmt"
 )
 func main(){
-	t := *flag.String("t", "sleep", "use timer")
+	t := *flag.String("t", "funcTicker", "use timer")
 	flag.Parse()
 	switch t {
 	case "ticker":
@@ -42,20 +42,20 @@ func main(){
 		defer ticker.Stop()
 		for range ticker.C {
 		}
-	case "tickFunc":
-		ticker:=timer.NewTicker(time.Millisecond)
+	case "funcTicker":
+		ticker:=timer.NewFuncTicker(time.Millisecond,nil)
 		defer ticker.Stop()
-		ticker.TickFunc(func() {
+		ticker.Tick(func() {
 			//todo
 		})
 		select {
 		}
 	case "sleep":
 		for{
-			timer.Sleep(time.Microsecond*100)
+			timer.Sleep(time.Millisecond)
 		}
 	default:
-		fmt.Println("use  ticker, tickFunc or sleep")
+		fmt.Println("use  ticker, funcTicker or sleep")
 	}
 }
 ```

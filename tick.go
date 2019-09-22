@@ -26,7 +26,22 @@ func NewTicker(d time.Duration) *Ticker{
 	startTimer(&t.r)
 	return t
 }
-func (t *Ticker) TickFunc( f func()) {
+func NewFuncTicker(d time.Duration,f func()) *Ticker{
+	if d < time.Microsecond {
+		panic(errors.New("non-positive interval for NewTicker"))
+	}
+	t := &Ticker{
+		r: runtimeTimer{
+			d:		d,
+			f:		f,
+			stop:make(chan bool,1),
+			closed:make(chan bool,1),
+		},
+	}
+	startTimer(&t.r)
+	return t
+}
+func (t *Ticker) Tick( f func()) {
 	t.r.f=f
 }
 func (t *Ticker) Stop() {
