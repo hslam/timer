@@ -1,8 +1,6 @@
 # timer
 A timer library reduced %CPU in top from 20-25% to 2-3% by writing a cgo function Sleep that calls C's usleep directly.
 
-
-
 ## Feature
 Much lower CPU overhead when using timer.Ticker or timer.Sleep()
 
@@ -36,9 +34,9 @@ import (
 	"fmt"
 )
 func main(){
-	t := flag.String("t", "tickFunc", "use timer")
+	t := *flag.String("t", "sleep", "use timer")
 	flag.Parse()
-	switch *t {
+	switch t {
 	case "ticker":
 		ticker:=timer.NewTicker(time. Millisecond)
 		defer ticker.Stop()
@@ -54,13 +52,13 @@ func main(){
 		}
 	case "sleep":
 		for{
-			timer.Sleep(time.Millisecond)
+			timer.Sleep(time.Microsecond*100)
 		}
 	default:
 		fmt.Println("use  ticker, tickFunc or sleep")
 	}
 }
- ```
+```
 
 
 ### Licence
