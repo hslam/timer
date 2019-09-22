@@ -7,16 +7,16 @@ import (
 	"fmt"
 )
 func main(){
-	t := flag.String("t", "tickFunc", "use timer")
+	t := *flag.String("t", "tickFunc", "use timer")
 	flag.Parse()
-	switch *t {
+	switch t {
 	case "ticker":
 		ticker:=timer.NewTicker(time. Millisecond)
 		defer ticker.Stop()
 		for range ticker.C {
 		}
 	case "tickFunc":
-		ticker:=timer.NewTicker(time.Microsecond*100)
+		ticker:=timer.NewTicker(time.Millisecond)
 		defer ticker.Stop()
 		ticker.TickFunc(func() {
 			//todo
