@@ -10,7 +10,7 @@ go     |Ticker     |146.3% |54.0% |12%
 go     |Sleep      |130.7% |24.2% |7.9%
 cgo    |Ticker     |124.8% |22.5% |6.6%
 cgo    |TickFunc   |46.5%  |5.2%  |1.9%
-cgo    |Sleep      |45.6%  |3.7%  |1.6%
+cgo    |Sleep      |45.6%  |4.6%  |1.6%
 
 ## Get started
 
