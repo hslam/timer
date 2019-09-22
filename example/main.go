@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 func main(){
-	t := *flag.String("t", "tickFunc", "use timer")
+	t := *flag.String("t", "sleep", "use timer")
 	flag.Parse()
 	switch t {
 	case "ticker":
@@ -25,7 +25,7 @@ func main(){
 		}
 	case "sleep":
 		for{
-			timer.Sleep(time.Millisecond)
+			timer.Sleep(time.Microsecond*100)
 		}
 	default:
 		fmt.Println("use  ticker, tickFunc or sleep")
