@@ -18,11 +18,12 @@ func TestTimerSleep(t *testing.T) {
 		Sleep(time.Millisecond)
 	}
 	runTimer:=time.Now().UnixNano()-startTimer
-	ratio:=float64(runTimer-runTime)/float64(runTime)
-	if ratio>0.1{
-		t.Errorf("error ratio %.2f%%",ratio)
+	ratioTimer:=float64(runTimer-int64(time.Second))/float64(time.Second)
+	ratioTime:=float64(runTime-int64(time.Second))/float64(time.Second)
+	if ratioTimer>ratioTime&&ratioTimer-ratioTime>0.1{
+		t.Errorf("error ratio Timer:%.2f Time:%.2f",ratioTimer,ratioTime)
 	}
-	t.Log("timer.Sleep()",runTimer,",time.Sleep()",runTime,"ratio",ratio)
+	t.Log("timer.Sleep()",runTimer,",time.Sleep()",runTime,",ratioTimer-ratioTime",ratioTimer-ratioTime)
 }
 
 
@@ -42,11 +43,12 @@ func TestTimerTicker(t *testing.T) {
 	}
 	runTimer:=time.Now().UnixNano()-startTimer
 	timerTicker.Stop()
-	ratio:=float64(runTimer-runTime)/float64(runTime)
-	if math.Abs(ratio)>0.1{
-		t.Errorf("error ratio %.2f%%",ratio)
+	ratioTimer:=float64(runTimer-int64(time.Second))/float64(time.Second)
+	ratioTime:=float64(runTime-int64(time.Second))/float64(time.Second)
+	if math.Abs(ratioTimer-ratioTime)>0.1||math.Abs(ratioTimer)>0.1{
+		t.Errorf("error ratio Timer:%.2f Time:%.2f",ratioTimer,ratioTime)
 	}
-	t.Log("timer.Ticker",runTimer,",time.Ticker",runTime,"ratio",ratio)
+	t.Log("timer.Ticker",runTimer,",time.Ticker",runTime,",ratioTimer",ratioTimer,",ratioTime",ratioTime)
 }
 
 
@@ -65,10 +67,16 @@ func BenchmarkTimeSleep(b *testing.B) {
 
 /*
 go test -v -bench=. -benchmem
+=== RUN   TestTimerSleep
+--- PASS: TestTimerSleep (2.81s)
+    sleep_test.go:26: timer.Sleep() 1361899000 ,time.Sleep() 1445361000 ,ratioTimer-ratioTime -0.08346199999999998
+=== RUN   TestTimerTicker
+--- PASS: TestTimerTicker (2.03s)
+    sleep_test.go:51: timer.Ticker 1026243000 ,time.Ticker 1000392000 ,ratioTimer 0.026243 ,ratioTime 0.000392
 goos: darwin
 goarch: amd64
 pkg: hslam.com/mgit/Mort/timer
-BenchmarkTimerSleep-4   	    2000	   1216306 ns/op	       0 B/op	       0 allocs/op
-BenchmarkTimeSleep-4    	    1000	   1240398 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTimerSleep-4   	    1000	   1415950 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTimeSleep-4    	    1000	   1357983 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	hslam.com/mgit/Mort/timer	3.927s*/
+ok  	hslam.com/mgit/Mort/timer	7.909s*/
