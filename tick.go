@@ -26,9 +26,15 @@ func NewTicker(d time.Duration) *Ticker{
 	startTimer(&t.r)
 	return t
 }
-func NewFuncTicker(d time.Duration,f func()) *Ticker{
+func NewFuncTicker(d time.Duration,args... interface{}) *Ticker{
 	if d < time.Microsecond {
 		panic(errors.New("non-positive interval for NewTicker"))
+	}
+	var f func()
+	if len(args)>0{
+		if args[0]!=nil{
+			f=args[0].(func())
+		}
 	}
 	t := &Ticker{
 		r: runtimeTimer{

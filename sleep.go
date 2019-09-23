@@ -6,8 +6,12 @@ package timer
 import "C"
 import (
 	"time"
+	"errors"
 )
 func Sleep(d time.Duration) {
+	if d < time.Microsecond {
+		panic(errors.New("non-positive interval for Sleep"))
+	}
 	var duration C.uint
 	duration=C.uint(int64(d)/1000)
 	C.usleep(duration)
@@ -24,14 +28,28 @@ type runtimeTimer struct {
 
 func (t *runtimeTimer) Start() {
 	go func() {
+		var startTime time.Duration=0
+		var lastWorkTime time.Duration=0
+		var sd time.Duration=0
 		for{
 			select {
 			case <-t.stop:
 				goto endfor
 			default:
-				Sleep(t.d)
+				if lastWorkTime>0{
+					sd=t.d-lastWorkTime
+				}else {
+					sd=t.d
+				}
+				if sd>time.Microsecond{
+					Sleep(sd)
+				}else {
+					Sleep(time.Microsecond)
+				}
 				if t.f!=nil{
+					startTime=time.Duration(time.Now().UnixNano())
 					t.f()
+					lastWorkTime=time.Duration(time.Now().UnixNano())-startTime
 				}else if t.arg!=nil{
 					t.arg<-time.Now()
 				}
