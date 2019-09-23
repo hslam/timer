@@ -16,7 +16,7 @@ func main(){
 		for range ticker.C {
 		}
 	case "funcTicker":
-		ticker:=timer.NewFuncTicker(time.Millisecond,nil)
+		ticker:=timer.NewFuncTicker(time.Second,nil)
 		defer ticker.Stop()
 		ticker.Tick(func() {
 			//todo
