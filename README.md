@@ -1,5 +1,6 @@
 # timer
 A timer library reduced %CPU in top from 20-25% to 2-3% during the idle period of system.
+
 By writing a cgo function Sleep that calls C's usleep directly.
 
 ## Feature
