@@ -28,7 +28,6 @@ import "hslam.com/mgit/Mort/timer"
 #### Example
 ```
 package main
-
 import (
 	"flag"
 	"time"
@@ -38,6 +37,7 @@ import (
 func main(){
 	t := *flag.String("t", "funcTicker", "use timer")
 	flag.Parse()
+	fmt.Println(timer.Tag)
 	switch t {
 	case "ticker":
 		ticker:=timer.NewTicker(time. Millisecond)
@@ -56,8 +56,12 @@ func main(){
 		for{
 			timer.Sleep(time.Millisecond)
 		}
+	case "after":
+		for{
+			<-timer.After(time.Millisecond)
+		}
 	default:
-		fmt.Println("use  ticker, funcTicker or sleep")
+		fmt.Println("use  ticker, funcTicker, sleep or after")
 	}
 }
 ```
