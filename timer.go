@@ -76,3 +76,12 @@ func startTimer(t *runtimeTimer){
 func stopTimer(t *runtimeTimer) bool{
 	return t.Stop()
 }
+
+func After(d time.Duration) <-chan time.Time {
+	c := make(chan time.Time, 1)
+	go func() {
+		Sleep(d)
+		c<-time.Now()
+	}()
+	return c
+}
