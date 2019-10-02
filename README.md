@@ -62,6 +62,10 @@ func main(){
 }
 ```
 
+### Build
+```
+go build -tags=use_cgo
+```
 
 ### Licence
 This package is licenced under a MIT licence (Copyright (c) 2019 Mort Huang)

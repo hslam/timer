@@ -9,6 +9,7 @@ import (
 func main(){
 	t := *flag.String("t", "funcTicker", "use timer")
 	flag.Parse()
+	fmt.Println(timer.Tag)
 	switch t {
 	case "ticker":
 		ticker:=timer.NewTicker(time. Millisecond)
