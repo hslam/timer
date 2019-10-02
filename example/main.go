@@ -27,11 +27,7 @@ func main(){
 		for{
 			timer.Sleep(time.Millisecond)
 		}
-	case "after":
-		for{
-			<-timer.After(time.Millisecond)
-		}
 	default:
-		fmt.Println("use  ticker, funcTicker, sleep or after")
+		fmt.Println("use  ticker, funcTicker or sleep")
 	}
 }

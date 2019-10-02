@@ -3,7 +3,6 @@ package timer
 import "time"
 
 
-
 type runtimeTimer struct {
 	arg    chan time.Time
 	d 		time.Duration
@@ -64,7 +63,7 @@ func (t *runtimeTimer) Stop() bool{
 	case <-t.closed:
 		close(t.closed)
 		return true
-	case <-After(time.Second):
+	case <-time.After(time.Second):
 		return false
 	}
 }
@@ -74,13 +73,4 @@ func startTimer(t *runtimeTimer){
 
 func stopTimer(t *runtimeTimer) bool{
 	return t.Stop()
-}
-
-func After(d time.Duration) <-chan time.Time {
-	c := make(chan time.Time, 1)
-	go func() {
-		Sleep(d)
-		c<-time.Now()
-	}()
-	return c
 }
