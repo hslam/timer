@@ -32,11 +32,7 @@ func BenchmarkTimerSleep(b *testing.B) {
 		Sleep(time.Millisecond)
 	}
 }
-func BenchmarkTimerAfter(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		<-After(time.Millisecond)
-	}
-}
+
 func TestTimerTicker(t *testing.T) {
 	timeTicker:=time.NewTicker(time.Millisecond)
 	startTime:=time.Now().UnixNano()
