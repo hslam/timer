@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 func main(){
-	t := *flag.String("t", "sleep", "use timer")
+	t := *flag.String("t", "funcTicker", "use timer")
 	flag.Parse()
 	fmt.Println(timer.Tag)
 	switch t {
@@ -33,6 +33,6 @@ func main(){
 			<-timer.After(time.Millisecond)
 		}
 	default:
-		fmt.Println("use  ticker, funcTicker or sleep")
+		fmt.Println("use  ticker, funcTicker, sleep or after")
 	}
 }
