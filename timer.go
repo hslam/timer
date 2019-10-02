@@ -64,8 +64,7 @@ func (t *runtimeTimer) Stop() bool{
 	case <-t.closed:
 		close(t.closed)
 		return true
-	case <-time.After(time.Second):
-		close(t.closed)
+	case <-After(time.Second):
 		return false
 	}
 }
