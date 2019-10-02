@@ -14,6 +14,10 @@ type runtimeTimer struct {
 
 func (t *runtimeTimer) Start() {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+			}
+		}()
 		var startSleepTime time.Duration=0
 		var lastSleepTime time.Duration=0
 		var startWorkTime time.Duration=0
@@ -58,8 +62,10 @@ func (t *runtimeTimer) Stop() bool{
 	t.stop<-true
 	select {
 	case <-t.closed:
+		close(t.closed)
 		return true
 	case <-time.After(time.Second):
+		close(t.closed)
 		return false
 	}
 }
