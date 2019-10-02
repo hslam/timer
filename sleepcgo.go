@@ -8,7 +8,6 @@ package timer
 import "C"
 import (
 	"time"
-	"errors"
 )
 const (
 	ALPHA = 0.1
@@ -18,7 +17,7 @@ var  Tag = "use_cgo"
 
 func Sleep(d time.Duration) {
 	if d < time.Microsecond {
-		panic(errors.New("non-positive interval for Sleep"))
+		d=time.Microsecond
 	}
 	var duration C.uint
 	duration=C.uint(int64(d)/1000)
