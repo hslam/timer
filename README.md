@@ -3,7 +3,6 @@ A timer library reduced %CPU in top from 20-25% to 2-3% during the idle period o
 
 By writing a cgo function Sleep that calls C's usleep directly.
 
-## Feature
 Much lower CPU overhead when using timer.Ticker or timer.Sleep()
 
 System |func   |1 us   |100 us|1 ms
@@ -13,6 +12,13 @@ go     |Sleep      |130.7% |24.2% |7.9%
 cgo    |Ticker     |124.8% |22.5% |6.6%
 cgo    |FuncTicker |46.5%  |5.2%  |1.9%
 cgo    |Sleep      |45.6%  |4.6%  |1.6%
+
+## Feature
+* Ticker
+* FuncTicker
+* Timer
+* Sleep
+* After
 
 ## Get started
 
@@ -30,34 +36,48 @@ import "hslam.com/mgit/Mort/timer"
 package main
 import (
 	"flag"
-	"time"
 	"hslam.com/mgit/Mort/timer"
 	"fmt"
 )
 func main(){
-	t := *flag.String("t", "funcTicker", "use timer")
+	t := *flag.String("t", "Sleep", "use timer")
 	flag.Parse()
 	fmt.Println(timer.Tag)
 	switch t {
-	case "ticker":
-		ticker:=timer.NewTicker(time. Millisecond)
-		defer ticker.Stop()
-		for range ticker.C {
+	case "Ticker":
+		t:=timer.NewTicker(timer.Millisecond)
+		defer t.Stop()
+		for range t.C {
+			//todo
 		}
-	case "funcTicker":
-		ticker:=timer.NewFuncTicker(time.Millisecond,nil)
-		defer ticker.Stop()
-		ticker.Tick(func() {
+	case "FuncTicker":
+		t:=timer.NewFuncTicker(timer.Millisecond,nil)
+		defer t.Stop()
+		t.Tick(func() {
 			//todo
 		})
-		select {
+		select {}
+	case "Timer":
+		t:=timer.NewTimer(timer.Millisecond)
+		defer t.Stop()
+		for range t.C {
+			t.Reset(timer.Millisecond)
+			//todo
 		}
-	case "sleep":
+	case "Sleep":
 		for{
-			timer.Sleep(time.Millisecond)
+			timer.Sleep(timer.Millisecond)
+			//todo
+		}
+	case "After":
+		for{
+			select {
+			case <-timer.After(timer.Millisecond):
+				//todo
+			}
 		}
 	default:
-		fmt.Println("use  ticker, funcTicker or sleep")
+		fmt.Println("use Ticker,FuncTicker,Timer,Sleep or After")
 	}
 }
 ```

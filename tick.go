@@ -9,6 +9,7 @@ type Ticker struct {
 	C <-chan time.Time
 	r runtimeTimer
 }
+
 func NewTicker(d time.Duration) *Ticker{
 	if d < time.Microsecond {
 		panic(errors.New("non-positive interval for NewTicker"))
@@ -17,16 +18,22 @@ func NewTicker(d time.Duration) *Ticker{
 	t := &Ticker{
 		C: c,
 		r: runtimeTimer{
-			d:		d,
+			tick:true,
+			when: when(d),
+			period: int64(d),
 			arg:    c,
-			stop:make(chan bool,1),
 			closed:make(chan bool,1),
 		},
 	}
 	startTimer(&t.r)
 	return t
 }
-func NewFuncTicker(d time.Duration,args... interface{}) *Ticker{
+
+type FuncTicker struct {
+	Ticker
+}
+
+func NewFuncTicker(d time.Duration,args... interface{}) *FuncTicker{
 	if d < time.Microsecond {
 		panic(errors.New("non-positive interval for NewTicker"))
 	}
@@ -36,23 +43,35 @@ func NewFuncTicker(d time.Duration,args... interface{}) *Ticker{
 			f=args[0].(func())
 		}
 	}
-	t := &Ticker{
-		r: runtimeTimer{
-			d:		d,
-			f:		f,
-			stop:make(chan bool,1),
-			closed:make(chan bool,1),
-		},
+	t := &FuncTicker{}
+	t.r= runtimeTimer{
+		tick:true,
+		when: when(d),
+		period: int64(d),
+		f:		f,
+		closed:make(chan bool,1),
+		workchan:make(chan bool,1),
 	}
+	go func() {
+		for range t.r.workchan{
+			if t.r.f!=nil{
+				t.r.f()
+			}
+			t.r.work=true
+		}
+	}()
 	startTimer(&t.r)
 	return t
 }
-func (t *Ticker) Tick( f func()) {
+
+func (t *FuncTicker) Tick( f func()) {
 	t.r.f=f
 }
+
 func (t *Ticker) Stop() {
 	stopTimer(&t.r)
 }
+
 func Tick(d time.Duration) <-chan time.Time {
 	if d <= 0 {
 		return nil
