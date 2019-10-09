@@ -14,6 +14,7 @@ cgo    |FuncTicker |46.5%  |5.2%  |1.9%
 cgo    |Sleep      |45.6%  |4.6%  |1.6%
 
 ## Feature
+* cgo
 * Ticker
 * FuncTicker
 * Timer
