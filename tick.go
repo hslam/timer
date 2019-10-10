@@ -49,7 +49,13 @@ func NewFuncTicker(d time.Duration,f func()) *FuncTicker{
 	go func() {
 		for range t.r.workchan{
 			if t.r.f!=nil{
-				go t.r.f()
+				func(){
+					defer func() {
+						if err := recover(); err != nil {
+						}
+					}()
+					t.r.f()
+				}()
 			}
 			t.r.work=true
 		}
