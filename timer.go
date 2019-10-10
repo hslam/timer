@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Nanosecond  time.Duration = 1
+	Nanosecond  		time.Duration = 1
 	Microsecond          = 1000 * Nanosecond
 	Millisecond          = 1000 * Microsecond
 	Second               = 1000 * Millisecond
@@ -14,7 +14,7 @@ const (
 	Hour                 = 60 * Minute
 )
 
-type TimerFunc  func(now time.Time)(score int64,f TimerFunc)
+type timerFunc  func(now time.Time)(score int64,f timerFunc)
 
 type runtimeTimer struct {
 	tick 	bool
@@ -25,7 +25,7 @@ type runtimeTimer struct {
 	when   	int64
 	period 	int64
 	f 		func()
-	timerFunc	TimerFunc
+	timerFunc	timerFunc
 	workchan chan bool
 	count int64
 }
@@ -36,7 +36,7 @@ func (t *runtimeTimer) Start() {
 	if t.closed==nil{
 		t.closed=make(chan bool,1)
 	}
-	t.timerFunc= func(now time.Time)(score int64,f TimerFunc) {
+	t.timerFunc= func(now time.Time)(score int64,f timerFunc) {
 		defer func() {
 			if err := recover(); err != nil {
 			}

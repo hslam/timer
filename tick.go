@@ -33,15 +33,9 @@ type FuncTicker struct {
 	Ticker
 }
 
-func NewFuncTicker(d time.Duration,args... interface{}) *FuncTicker{
+func NewFuncTicker(d time.Duration,f func()) *FuncTicker{
 	if d < time.Microsecond {
 		panic(errors.New("non-positive interval for NewTicker"))
-	}
-	var f func()
-	if len(args)>0{
-		if args[0]!=nil{
-			f=args[0].(func())
-		}
 	}
 	t := &FuncTicker{}
 	t.r= runtimeTimer{
@@ -55,7 +49,7 @@ func NewFuncTicker(d time.Duration,args... interface{}) *FuncTicker{
 	go func() {
 		for range t.r.workchan{
 			if t.r.f!=nil{
-				t.r.f()
+				go t.r.f()
 			}
 			t.r.work=true
 		}

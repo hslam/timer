@@ -16,7 +16,7 @@ var (
 )
 
 func GetLoop(d time.Duration) *loop {
-	if d>=time.Second{
+	if d>=time.Second||d==0{
 		return GetLoopInstance(secondLoop,time.Second)
 	}else if d>=time.Millisecond*100{
 		return GetLoopInstance(milliLoop100,time.Millisecond*100)
@@ -64,7 +64,7 @@ func newLoop(d time.Duration) *loop {
 	return l
 }
 
-func (l *loop) AddFunc(score int64,f TimerFunc){
+func (l *loop) AddFunc(score int64,f timerFunc){
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.addFunc(score,f)
@@ -76,18 +76,18 @@ func (l *loop) RunFunc(now time.Time)bool{
 	return l.runFunc(now)
 }
 
-func (l *loop) addFunc(score int64,f TimerFunc){
+func (l *loop) addFunc(score int64,f timerFunc){
 	l.sorted.Insert(Score(score),Value(f))
 }
 
 func (l *loop) runFunc(now time.Time)bool{
 	ss:=make([]int64,0)
-	fs:=make([]TimerFunc,0)
+	fs:=make([]timerFunc,0)
 	for {
 		if l.sorted.Length()<1{
 			break
 		}
-		if int64(l.sorted.Rear().Score())>int64(now.UnixNano()){
+		if int64(l.sorted.Front().Score())>int64(now.UnixNano()){
 			break
 		}
 		top:=l.sorted.Top()

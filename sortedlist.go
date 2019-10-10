@@ -2,7 +2,7 @@ package timer
 
 type Less func(i Score,j Score)bool
 type Score int64
-type Value TimerFunc
+type Value timerFunc
 
 var LessInt64= func(i Score,j Score)bool{
 	if i<j {return true} else {return false}
@@ -66,12 +66,12 @@ func (l *SortedList) Length() int {
 	return l.length
 }
 
-//read rear data node
-func (l *SortedList) Rear() *Node {
+//read front data node
+func (l *SortedList) Front() *Node {
 	if l.length == 0 {
 		return nil
 	}
-	return l.rear.prev
+	return l.front.next
 }
 
 //Insert
