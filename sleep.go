@@ -7,7 +7,7 @@ import (
 )
 const (
 	ALPHA = 0.8
-	BETA  = 1.6
+	BETA  = 1.3
 )
 
 var  Tag = "!use_cgo"
