@@ -5,6 +5,7 @@ package timer
 import (
 	"time"
 )
+
 const (
 	ALPHA = 0.8
 	BETA  = 1.3

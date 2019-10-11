@@ -9,9 +9,10 @@ import "C"
 import (
 	"time"
 )
+
 const (
 	ALPHA = 0.8
-	BETA  = 1.3
+	BETA  = 1.6
 )
 var  Tag = "use_cgo"
 

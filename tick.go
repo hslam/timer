@@ -70,6 +70,9 @@ func (t *FuncTicker) Tick( f func()) {
 
 func (t *Ticker) Stop() {
 	stopTimer(&t.r)
+	if t.r.workchan!=nil{
+		close(t.r.workchan)
+	}
 }
 
 func Tick(d time.Duration) <-chan time.Time {

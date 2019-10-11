@@ -5,42 +5,85 @@ import (
 	"sync"
 )
 
-var (
-	secondLoop 		= &loopInstance{}
-	milliLoop100 	= &loopInstance{}
-	milliLoop10 	= &loopInstance{}
-	milliLoop 		= &loopInstance{}
-	microLoop100 	= &loopInstance{}
-	microLoop10 	= &loopInstance{}
-	microLoop 		= &loopInstance{}
+const (
+	maxIdleTime 		= time.Second*3
+	maxSafeTime 		= time.Second*2
+	minIdleTime 		= time.Millisecond*300
+	minSafeTime 		= time.Millisecond*200
 )
 
-func GetLoop(d time.Duration) *loop {
+var (
+	secondLoop 		= newloopInstance()
+	milliLoop100 	= newloopInstance()
+	milliLoop10 	= newloopInstance()
+	milliLoop 		= newloopInstance()
+	microLoop100 	= newloopInstance()
+	microLoop10 	= newloopInstance()
+	microLoop 		= newloopInstance()
+)
+
+func newloopInstance() *loopInstance {
+	return  &loopInstance{once:&sync.Once{}}
+}
+
+func getLoop(d time.Duration) *loop {
+	for{
+		l:=selectLoop(d)
+		if l!=nil{
+			return l
+		}
+	}
+}
+
+func selectLoop(d time.Duration) *loop {
 	if d>=time.Second||d==0{
-		return GetLoopInstance(secondLoop,time.Second)
+		return getLoopInstance(secondLoop,time.Second)
 	}else if d>=time.Millisecond*100{
-		return GetLoopInstance(milliLoop100,time.Millisecond*100)
+		return getLoopInstance(milliLoop100,time.Millisecond*100)
 	}else if d>=time.Millisecond*10{
-		return GetLoopInstance(milliLoop10,time.Millisecond*10)
+		return getLoopInstance(milliLoop10,time.Millisecond*10)
 	}else if d>=time.Millisecond{
-		return GetLoopInstance(milliLoop,time.Millisecond)
+		return getLoopInstance(milliLoop,time.Millisecond)
 	}else if d>=time.Microsecond*100{
-		return GetLoopInstance(microLoop100,time.Microsecond*100)
+		return getLoopInstance(microLoop100,time.Microsecond*100)
 	}else if d>=time.Microsecond*10{
-		return GetLoopInstance(microLoop10,time.Microsecond*10)
+		return getLoopInstance(microLoop10,time.Microsecond*10)
 	}else {
-		return GetLoopInstance(microLoop,time.Microsecond)
+		return getLoopInstance(microLoop,time.Microsecond)
 	}
 }
 
 type loopInstance struct {
-	once sync.Once
+	once *sync.Once
 	l *loop
 }
 
-func GetLoopInstance(instance *loopInstance,d time.Duration)*loop  {
+func getLoopInstance(instance *loopInstance,d time.Duration)*loop  {
 	instance.once.Do(func() {
 		instance.l=newLoop(d)
+		go func(instance *loopInstance) {
+			idleTime:=min(maxIdleTime,max(minIdleTime,instance.l.d*3))
+			safeTime:=min(maxSafeTime,max(minSafeTime,instance.l.d*2))
+			var lastIdle = time.Now()
+			var once bool
+			for{
+				if instance.l.sorted.Length()>0{
+					lastIdle=time.Now()
+				}
+				if lastIdle.Add(idleTime).Before(time.Now())&&!once{
+					once=true
+					l:=instance.l
+					go func(l *loop) {
+						time.Sleep(safeTime)
+						l.Stop()
+					}(l)
+					instance.l=nil
+					instance.once=&sync.Once{}
+					break
+				}
+				Sleep(time.Second)
+			}
+		}(instance)
 	})
 	return instance.l
 }
@@ -120,6 +163,7 @@ func (l *loop) run() {
 	for{
 		select {
 		case <-l.stop:
+			close(l.stop)
 			goto endfor
 		default:
 			if lastSleepTime>l.d{
@@ -141,9 +185,6 @@ endfor:
 }
 
 func (l *loop) Stop() bool{
-	defer func() {
-		l=nil
-	}()
 	l.stop<-true
 	select {
 	case <-l.closed:

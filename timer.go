@@ -37,38 +37,36 @@ func (t *runtimeTimer) Start() {
 		t.closed=make(chan bool,1)
 	}
 	t.timerFunc= func(now time.Time)(score int64,f timerFunc) {
-		defer func() {
-			if err := recover(); err != nil {
-			}
-		}()
+		defer func() {if err := recover(); err != nil {}}()
 		t.count+=1
 		if t.f!=nil&&t.work{
 			t.work=false
 			t.workchan<-true
 		}else if t.arg!=nil&&len(t.arg)==0{
-			t.arg<-now
+			func() {
+				defer func() {if err := recover(); err != nil {}}()
+				t.arg<-now
+			}()
 		}
 		if t.tick&&!t.stop{
 			return t.when+t.count*int64(t.period),t.timerFunc
 		}else {
-			t.closed<-true
+			func() {
+				defer func() {if err := recover(); err != nil {}}()
+				t.closed<-true
+			}()
 			return -1,nil
 		}
 	}
-	GetLoop(time.Duration(t.period)).AddFunc(t.when,t.timerFunc)
+	getLoop(time.Duration(t.period)).AddFunc(t.when,t.timerFunc)
 }
 
 func (t *runtimeTimer) Stop() bool{
-	defer func() {
-		if err := recover(); err != nil {
-		}
-	}()
-	defer func() {
-		close(t.closed)
-	}()
+	defer func() {if err := recover(); err != nil {}}()
 	t.stop=true
 	select {
 	case <-t.closed:
+		close(t.closed)
 		return true
 	case <-time.After(time.Second):
 		return false
