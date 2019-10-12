@@ -56,9 +56,12 @@ func (r *runtimeTimer) Start() {
 		r.count+=1
 		if r.f!=nil&&r.work{
 			r.work=false
-			r.workchan<-true
+			go func() {
+				defer func() {if err := recover(); err != nil {}}()
+				r.workchan<-true
+			}()
 		}else if r.arg!=nil&&len(r.arg)==0{
-			func() {
+			go func() {
 				defer func() {if err := recover(); err != nil {}}()
 				r.arg<-now
 			}()
@@ -66,7 +69,7 @@ func (r *runtimeTimer) Start() {
 		if r.tick&&!r.stop{
 			return r.when+r.count*int64(r.period),r.timerFunc
 		}else {
-			func() {
+			go func() {
 				defer func() {if err := recover(); err != nil {}}()
 				r.closed<-true
 			}()
