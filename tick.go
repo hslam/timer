@@ -46,20 +46,6 @@ func NewFuncTicker(d time.Duration,f func()) *FuncTicker{
 		closed:make(chan bool,1),
 		workchan:make(chan bool,1),
 	}
-	go func() {
-		for range t.r.workchan{
-			if t.r.f!=nil{
-				func(){
-					defer func() {
-						if err := recover(); err != nil {
-						}
-					}()
-					t.r.f()
-				}()
-			}
-			t.r.work=true
-		}
-	}()
 	startTimer(&t.r)
 	return t
 }
@@ -69,10 +55,13 @@ func (t *FuncTicker) Tick( f func()) {
 }
 
 func (t *Ticker) Stop() {
+	defer func() {
+		defer func() {if err := recover(); err != nil {}}()
+		if t.r.arg!=nil{
+			close(t.r.arg)
+		}
+	}()
 	stopTimer(&t.r)
-	if t.r.workchan!=nil{
-		close(t.r.workchan)
-	}
 }
 
 func Tick(d time.Duration) <-chan time.Time {

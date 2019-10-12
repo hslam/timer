@@ -30,55 +30,81 @@ type runtimeTimer struct {
 	count int64
 }
 
-func (t *runtimeTimer) Start() {
-	t.work=true
-	t.stop=false
-	if t.closed==nil{
-		t.closed=make(chan bool,1)
+func (r *runtimeTimer) Start() {
+	r.work=true
+	r.stop=false
+	if r.closed==nil{
+		r.closed=make(chan bool,1)
 	}
-	t.timerFunc= func(now time.Time)(score int64,f timerFunc) {
+	if r.workchan!=nil{
+		go func() {
+			for range r.workchan{
+				if r.f!=nil{
+					func(){
+						defer func() {
+							if err := recover(); err != nil {
+							}
+						}()
+						r.f()
+					}()
+				}
+			}
+		}()
+	}
+	r.timerFunc= func(now time.Time)(score int64,f timerFunc) {
 		defer func() {if err := recover(); err != nil {}}()
-		t.count+=1
-		if t.f!=nil&&t.work{
-			t.work=false
-			t.workchan<-true
-		}else if t.arg!=nil&&len(t.arg)==0{
+		r.count+=1
+		if r.f!=nil&&r.work{
+			r.work=false
+			r.workchan<-true
+		}else if r.arg!=nil&&len(r.arg)==0{
 			func() {
 				defer func() {if err := recover(); err != nil {}}()
-				t.arg<-now
+				r.arg<-now
 			}()
 		}
-		if t.tick&&!t.stop{
-			return t.when+t.count*int64(t.period),t.timerFunc
+		if r.tick&&!r.stop{
+			return r.when+r.count*int64(r.period),r.timerFunc
 		}else {
 			func() {
 				defer func() {if err := recover(); err != nil {}}()
-				t.closed<-true
+				r.closed<-true
 			}()
 			return -1,nil
 		}
 	}
-	getLoop(time.Duration(t.period)).AddFunc(t.when,t.timerFunc)
+	getLoop(time.Duration(r.period)).AddFunc(r.when,r.timerFunc)
 }
 
-func (t *runtimeTimer) Stop() bool{
+func (r *runtimeTimer) Stop() bool{
 	defer func() {if err := recover(); err != nil {}}()
-	t.stop=true
+	defer func() {
+		defer func() {if err := recover(); err != nil {}}()
+		if r.workchan!=nil{
+			close(r.workchan)
+		}
+	}()
+	defer func() {
+		defer func() {if err := recover(); err != nil {}}()
+		if r.closed!=nil{
+			close(r.closed)
+		}
+	}()
+	r.stop=true
 	select {
-	case <-t.closed:
-		close(t.closed)
+	case <-r.closed:
 		return true
 	case <-time.After(time.Second):
 		return false
 	}
 }
 
-func startTimer(t *runtimeTimer){
-	t.Start()
+func startTimer(r *runtimeTimer){
+	r.Start()
 }
 
-func stopTimer(t *runtimeTimer) bool{
-	return t.Stop()
+func stopTimer(r *runtimeTimer) bool{
+	return r.Stop()
 }
 
 func After(d time.Duration) <-chan time.Time {
@@ -95,7 +121,7 @@ func NewTimer(d time.Duration) *Timer {
 		panic(errors.New("non-positive interval for NewTimer"))
 	}
 	c := make(chan time.Time, 1)
-	t := &Timer{
+	r := &Timer{
 		C: c,
 		r: runtimeTimer{
 			when: when(d),
@@ -104,23 +130,29 @@ func NewTimer(d time.Duration) *Timer {
 			closed:make(chan bool,1),
 		},
 	}
-	startTimer(&t.r)
-	return t
+	startTimer(&r.r)
+	return r
 }
 
-func (t *Timer) Stop() bool {
-	return stopTimer(&t.r)
+func (r *Timer) Stop() bool {
+	defer func() {
+		defer func() {if err := recover(); err != nil {}}()
+		if r.r.arg!=nil{
+			close(r.r.arg)
+		}
+	}()
+	return stopTimer(&r.r)
 }
 
-func (t *Timer) Reset(d time.Duration) bool {
+func (r *Timer) Reset(d time.Duration) bool {
 	if d < time.Microsecond {
 		panic(errors.New("non-positive interval for NewTicker"))
 	}
 	w := when(d)
-	active := stopTimer(&t.r)
-	t.r.when = w
-	t.r.period=int64(d)
-	startTimer(&t.r)
+	active := stopTimer(&r.r)
+	r.r.when = w
+	r.r.period=int64(d)
+	startTimer(&r.r)
 	return active
 }
 
@@ -128,11 +160,11 @@ func when(d time.Duration) int64 {
 	if d <= 0 {
 		return runtimeNano()
 	}
-	t := runtimeNano() + int64(d)
-	if t < 0 {
-		t = 1<<63 - 1 // math.MaxInt64
+	r := runtimeNano() + int64(d)
+	if r < 0 {
+		r = 1<<63 - 1 // math.MaxInt64
 	}
-	return t
+	return r
 }
 
 func runtimeNano() int64{
