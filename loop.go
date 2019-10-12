@@ -3,7 +3,6 @@ package timer
 import (
 	"time"
 	"sync"
-	"fmt"
 )
 
 const (
@@ -70,7 +69,6 @@ func getLoopInstance(instance *loopInstance,d time.Duration)*loop  {
 			for{
 				if len(instance.l.m)>0{
 					lastIdle=time.Now()
-					fmt.Println(instance.l.sorted.Length(),len(instance.l.m))
 				}
 				if lastIdle.Add(idleTime).Before(time.Now())&&!once{
 					once=true
