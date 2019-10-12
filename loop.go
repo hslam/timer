@@ -3,13 +3,14 @@ package timer
 import (
 	"time"
 	"sync"
+	"fmt"
 )
 
 const (
 	maxIdleTime 		= time.Second*3
 	maxSafeTime 		= time.Second*2
-	minIdleTime 		= time.Millisecond*300
-	minSafeTime 		= time.Millisecond*200
+	minIdleTime 		= time.Millisecond*30
+	minSafeTime 		= time.Millisecond*20
 )
 
 var (
@@ -67,8 +68,9 @@ func getLoopInstance(instance *loopInstance,d time.Duration)*loop  {
 			var lastIdle = time.Now()
 			var once bool
 			for{
-				if instance.l.sorted.Length()>0{
+				if len(instance.l.m)>0{
 					lastIdle=time.Now()
+					fmt.Println(instance.l.sorted.Length(),len(instance.l.m))
 				}
 				if lastIdle.Add(idleTime).Before(time.Now())&&!once{
 					once=true
@@ -76,6 +78,7 @@ func getLoopInstance(instance *loopInstance,d time.Duration)*loop  {
 					go func(l *loop) {
 						time.Sleep(safeTime)
 						l.Stop()
+						l=nil
 					}(l)
 					instance.l=nil
 					instance.once=&sync.Once{}
@@ -91,6 +94,7 @@ func getLoopInstance(instance *loopInstance,d time.Duration)*loop  {
 type loop struct {
 	mu 		sync.RWMutex
 	sorted	*SortedList
+	m 		map[*runtimeTimer]bool
 	d 		time.Duration
 	stop	chan bool
 	closed	chan bool
@@ -100,13 +104,31 @@ func newLoop(d time.Duration) *loop {
 	l:=&loop{
 		d:			d,
 		sorted:		NewSortedList(),
+		m: 			make(map[*runtimeTimer]bool),
 		stop:		make(chan bool,1),
 		closed:		make(chan bool,1),
 	}
 	go l.run()
 	return l
 }
-
+func (l *loop) Register(r *runtimeTimer){
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.register(r)
+}
+func (l *loop) register(r *runtimeTimer){
+	l.m[r]=true
+}
+func (l *loop) Unregister(r *runtimeTimer){
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.unregister(r)
+}
+func (l *loop) unregister(r *runtimeTimer){
+	if _,ok:=l.m[r];ok{
+		delete(l.m,r)
+	}
+}
 func (l *loop) AddFunc(score int64,f timerFunc){
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -185,6 +207,10 @@ endfor:
 }
 
 func (l *loop) Stop() bool{
+	defer func() {if err := recover(); err != nil {}}()
+	defer func() {
+		l.m=nil
+	}()
 	l.stop<-true
 	select {
 	case <-l.closed:

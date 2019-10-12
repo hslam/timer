@@ -56,12 +56,12 @@ func (r *runtimeTimer) Start() {
 		r.count+=1
 		if r.f!=nil&&r.work{
 			r.work=false
-			go func() {
+			func() {
 				defer func() {if err := recover(); err != nil {}}()
 				r.workchan<-true
 			}()
 		}else if r.arg!=nil&&len(r.arg)==0{
-			go func() {
+			func() {
 				defer func() {if err := recover(); err != nil {}}()
 				r.arg<-now
 			}()
@@ -69,18 +69,23 @@ func (r *runtimeTimer) Start() {
 		if r.tick&&!r.stop{
 			return r.when+r.count*int64(r.period),r.timerFunc
 		}else {
-			go func() {
+			func() {
 				defer func() {if err := recover(); err != nil {}}()
 				r.closed<-true
 			}()
 			return -1,nil
 		}
 	}
+	getLoop(time.Duration(r.period)).Register(r)
 	getLoop(time.Duration(r.period)).AddFunc(r.when,r.timerFunc)
 }
 
 func (r *runtimeTimer) Stop() bool{
 	defer func() {if err := recover(); err != nil {}}()
+	defer func() {
+		defer func() {if err := recover(); err != nil {}}()
+		getLoop(time.Duration(r.period)).Unregister(r)
+	}()
 	defer func() {
 		defer func() {if err := recover(); err != nil {}}()
 		if r.workchan!=nil{
