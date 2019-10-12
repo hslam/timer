@@ -26,7 +26,6 @@ type runtimeTimer struct {
 	period 	int64
 	f 		func()
 	timerFunc	timerFunc
-	workchan chan bool
 	count int64
 }
 
@@ -36,29 +35,15 @@ func (r *runtimeTimer) Start() {
 	if r.closed==nil{
 		r.closed=make(chan bool,1)
 	}
-	if r.workchan!=nil{
-		go func() {
-			for range r.workchan{
-				if r.f!=nil{
-					func(){
-						defer func() {
-							if err := recover(); err != nil {
-							}
-						}()
-						r.f()
-					}()
-				}
-			}
-		}()
-	}
 	r.timerFunc= func(now time.Time)(score int64,f timerFunc) {
 		defer func() {if err := recover(); err != nil {}}()
 		r.count+=1
 		if r.f!=nil&&r.work{
 			r.work=false
-			func() {
+			go func() {
 				defer func() {if err := recover(); err != nil {}}()
-				r.workchan<-true
+				r.f()
+				r.work=true
 			}()
 		}else if r.arg!=nil&&len(r.arg)==0{
 			func() {
@@ -85,12 +70,6 @@ func (r *runtimeTimer) Stop() bool{
 	defer func() {
 		defer func() {if err := recover(); err != nil {}}()
 		getLoop(time.Duration(r.period)).Unregister(r)
-	}()
-	defer func() {
-		defer func() {if err := recover(); err != nil {}}()
-		if r.workchan!=nil{
-			close(r.workchan)
-		}
 	}()
 	defer func() {
 		defer func() {if err := recover(); err != nil {}}()

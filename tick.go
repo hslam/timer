@@ -3,8 +3,20 @@ package timer
 import (
 	"time"
 	"errors"
+	"sync/atomic"
+	"runtime"
 )
 
+var(
+	maxCount 	int64 =0
+	count 		int64
+)
+
+func init() {
+	if runtime.NumCPU()>2{
+		maxCount=int64(runtime.NumCPU()-2)
+	}
+}
 type Ticker struct {
 	C <-chan time.Time
 	r runtimeTimer
@@ -31,6 +43,8 @@ func NewTicker(d time.Duration) *Ticker{
 
 type FuncTicker struct {
 	Ticker
+	f funcTimer
+	funcType bool
 }
 
 func NewFuncTicker(d time.Duration,f func()) *FuncTicker{
@@ -38,20 +52,46 @@ func NewFuncTicker(d time.Duration,f func()) *FuncTicker{
 		panic(errors.New("non-positive interval for NewTicker"))
 	}
 	t := &FuncTicker{}
-	t.r= runtimeTimer{
-		tick:true,
-		when: when(d),
-		period: int64(d),
-		f:		f,
-		closed:make(chan bool,1),
-		workchan:make(chan bool,1),
+	if d<time.Millisecond*10&&atomic.LoadInt64(&count)<maxCount{
+		atomic.AddInt64(&count,1)
+		t.funcType=true
+		t.f= funcTimer{
+			when: when(d),
+			d:		d,
+			f:		f,
+			stop:make(chan bool,1),
+			closed:make(chan bool,1),
+		}
+		startFuncTimer(&t.f)
+		return t
+	}else {
+		t.r= runtimeTimer{
+			tick:true,
+			when: when(d),
+			period: int64(d),
+			f:		f,
+			closed:make(chan bool,1),
+		}
+		startTimer(&t.r)
+		return t
 	}
-	startTimer(&t.r)
-	return t
 }
 
 func (t *FuncTicker) Tick( f func()) {
-	t.r.f=f
+	 if t.funcType{
+		t.f.f=f
+	}else{
+		t.r.f=f
+	}
+}
+
+func (t *FuncTicker) Stop() {
+	if t.funcType{
+		atomic.AddInt64(&count,-1)
+		stopFuncTimer(&t.f)
+	}else {
+		stopTimer(&t.r)
+	}
 }
 
 func (t *Ticker) Stop() {
