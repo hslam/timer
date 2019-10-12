@@ -52,7 +52,7 @@ func NewFuncTicker(d time.Duration,f func()) *FuncTicker{
 		panic(errors.New("non-positive interval for NewTicker"))
 	}
 	t := &FuncTicker{}
-	if d<time.Millisecond*10&&atomic.LoadInt64(&count)<maxCount{
+	if d<=time.Millisecond&&atomic.LoadInt64(&count)<maxCount{
 		atomic.AddInt64(&count,1)
 		t.funcType=true
 		t.f= funcTimer{
