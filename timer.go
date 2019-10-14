@@ -77,6 +77,9 @@ func (r *runtimeTimer) Stop() bool{
 			close(r.closed)
 		}
 	}()
+	if r.stop==true{
+		return true
+	}
 	r.stop=true
 	select {
 	case <-r.closed:

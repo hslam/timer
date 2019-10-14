@@ -42,8 +42,8 @@ func NewTicker(d time.Duration) *Ticker{
 }
 
 type FuncTicker struct {
-	Ticker
 	f funcTimer
+	r runtimeTimer
 	funcType bool
 }
 
@@ -87,7 +87,9 @@ func (t *FuncTicker) Tick( f func()) {
 
 func (t *FuncTicker) Stop() {
 	if t.funcType{
-		atomic.AddInt64(&count,-1)
+		if t.f.stop!=nil{
+			atomic.AddInt64(&count,-1)
+		}
 		stopFuncTimer(&t.f)
 	}else {
 		stopTimer(&t.r)

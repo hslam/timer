@@ -68,6 +68,9 @@ func (f *funcTimer) Stop() bool{
 			close(f.closed)
 		}
 	}()
+	if f.stop==nil{
+		return true
+	}
 	f.stop<-true
 	select {
 	case <-f.closed:
