@@ -17,6 +17,11 @@ func init() {
 		maxCount=int64(runtime.NumCPU()-2)
 	}
 }
+
+func MaxCount(v int64){
+	maxCount=v
+}
+
 type Ticker struct {
 	C <-chan time.Time
 	r runtimeTimer
