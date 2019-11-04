@@ -25,11 +25,11 @@ cgo    |Sleep      |45.6%  |4.6%  |1.6%
 
 ### Install
 ```
-go get hslam.com/mgit/Mort/timer
+go get hslam.com/git/x/timer
 ```
 ### Import
 ```
-import "hslam.com/mgit/Mort/timer"
+import "hslam.com/git/x/timer"
 ```
 ### Usage
 #### Example
@@ -37,7 +37,7 @@ import "hslam.com/mgit/Mort/timer"
 package main
 import (
 	"flag"
-	"hslam.com/mgit/Mort/timer"
+	"hslam.com/git/x/timer"
 	"fmt"
 )
 func main(){

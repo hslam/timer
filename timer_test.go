@@ -64,10 +64,10 @@ func TestTimerTicker(t *testing.T) {
 //timer_test.go:55: timer.Ticker 1001063000 ,time.Ticker 1000397000 ,ratioTimer 0.001063 ,ratioTime 0.000397
 //goos: darwin
 //goarch: amd64
-//pkg: hslam.com/mgit/Mort/timer
+//pkg: hslam.com/git/x/timer
 //BenchmarkTimerSleep-4   	    1000	   1359823 ns/op	       0 B/op	       0 allocs/op
 //PASS
-//ok  	hslam.com/mgit/Mort/timer	6.373s
+//ok  	hslam.com/git/x/timer	6.373s
 
 //go test -v -bench=. -benchmem  -tags=use_cgo
 //=== RUN   TestTimerSleep
@@ -78,7 +78,7 @@ func TestTimerTicker(t *testing.T) {
 //timer_test.go:55: timer.Ticker 1001974000 ,time.Ticker 1000416000 ,ratioTimer 0.001974 ,ratioTime 0.000416
 //goos: darwin
 //goarch: amd64
-//pkg: hslam.com/mgit/Mort/timer
+//pkg: hslam.com/git/x/timer
 //BenchmarkTimerSleep-4   	    1000	   1387910 ns/op	       0 B/op	       0 allocs/op
 //PASS
-//ok  	hslam.com/mgit/Mort/timer	6.329s
+//ok  	hslam.com/git/x/timer	6.329s
