@@ -25,11 +25,11 @@ cgo    |Sleep      |45.6%  |4.6%  |1.6%
 
 ### Install
 ```
-go get hslam.com/git/x/timer
+go get github.com/hslam/timer
 ```
 ### Import
 ```
-import "hslam.com/git/x/timer"
+import "github.com/hslam/timer"
 ```
 ### Usage
 #### Example
@@ -37,7 +37,7 @@ import "hslam.com/git/x/timer"
 package main
 import (
 	"flag"
-	"hslam.com/git/x/timer"
+	"github.com/hslam/timer"
 	"fmt"
 )
 func main(){

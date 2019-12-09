@@ -1,7 +1,7 @@
 package main
 import (
 	"flag"
-	"hslam.com/git/x/timer"
+	"github.com/hslam/timer"
 	"fmt"
 )
 func main(){
