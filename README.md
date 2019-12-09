@@ -89,10 +89,10 @@ go build -tags=use_cgo
 ```
 
 ### Licence
-This package is licenced under a MIT licence (Copyright (c) 2019 Mort Huang)
+This package is licenced under a MIT licence (Copyright (c) 2019 Meng Huang)
 
 
 ### Authors
-timer was written by Mort Huang.
+timer was written by Meng Huang.
 
 
