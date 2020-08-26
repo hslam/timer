@@ -11,7 +11,7 @@ const (
 	BETA  = 1.3
 )
 
-var  Tag = "!use_cgo"
+var Tag = "!use_cgo"
 
 func Sleep(d time.Duration) {
 	time.Sleep(d)

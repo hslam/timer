@@ -11,20 +11,22 @@ import (
 )
 
 const (
-	ALPHA	= 0.8
-	BETA	= 1.6
+	ALPHA = 0.8
+	BETA  = 1.6
 	//defaultMaxSleep	C.uint = 19
 )
-var  Tag = "use_cgo"
+
+var Tag = "use_cgo"
 
 func Sleep(d time.Duration) {
 	if d < time.Microsecond {
-		d=time.Microsecond
+		d = time.Microsecond
 	}
 	var duration C.uint
-	duration=C.uint(int64(d)/1000)
+	duration = C.uint(int64(d) / 1000)
 	C.usleep(duration)
 }
+
 //func Sleep(d time.Duration) {
 //	if d < time.Microsecond {
 //		d=time.Microsecond
@@ -45,4 +47,3 @@ func Sleep(d time.Duration) {
 //		C.usleep(duration)
 //	}
 //}
-
