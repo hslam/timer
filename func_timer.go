@@ -10,8 +10,8 @@ import (
 type funcTimer struct {
 	d      time.Duration
 	when   int64
-	stop   chan bool
-	closed chan bool
+	done   chan struct{}
+	closed bool
 	f      func()
 	count  int64
 }
@@ -32,8 +32,7 @@ func (f *funcTimer) run() {
 	var lastTime = time.Now()
 	for {
 		select {
-		case <-f.stop:
-			close(f.stop)
+		case <-f.done:
 			goto endfor
 		default:
 			if lastSleepTime > f.d {
@@ -63,33 +62,15 @@ func (f *funcTimer) run() {
 		}
 	}
 endfor:
-	f.closed <- true
 }
 
 func (f *funcTimer) Stop() bool {
-	defer func() {
-		if err := recover(); err != nil {
-		}
-	}()
-	defer func() {
-		defer func() {
-			if err := recover(); err != nil {
-			}
-		}()
-		if f.closed != nil {
-			close(f.closed)
-		}
-	}()
-	if f.stop == nil {
+	if f.closed {
 		return true
 	}
-	f.stop <- true
-	select {
-	case <-f.closed:
-		return true
-	case <-time.After(time.Second):
-		return false
-	}
+	f.closed = true
+	close(f.done)
+	return true
 }
 
 func startFuncTimer(f *funcTimer) {

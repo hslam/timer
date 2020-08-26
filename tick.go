@@ -64,11 +64,10 @@ func NewFuncTicker(d time.Duration, f func()) *FuncTicker {
 		atomic.AddInt64(&count, 1)
 		t.funcType = true
 		t.f = funcTimer{
-			when:   when(d),
-			d:      d,
-			f:      f,
-			stop:   make(chan bool, 1),
-			closed: make(chan bool, 1),
+			when: when(d),
+			d:    d,
+			f:    f,
+			done: make(chan struct{}, 1),
 		}
 		startFuncTimer(&t.f)
 		return t
@@ -95,7 +94,7 @@ func (t *FuncTicker) Tick(f func()) {
 
 func (t *FuncTicker) Stop() {
 	if t.funcType {
-		if t.f.stop != nil {
+		if !t.f.closed {
 			atomic.AddInt64(&count, -1)
 		}
 		stopFuncTimer(&t.f)
