@@ -42,7 +42,6 @@ func NewTicker(d time.Duration) *Ticker {
 			when:   when(d),
 			period: int64(d),
 			arg:    c,
-			closed: make(chan bool, 1),
 		},
 	}
 	startTimer(&t.r)
@@ -57,7 +56,7 @@ type FuncTicker struct {
 
 func NewFuncTicker(d time.Duration, f func()) *FuncTicker {
 	if d < time.Microsecond {
-		panic(errors.New("non-positive interval for NewTicker"))
+		panic(errors.New("non-positive interval for NewFuncTicker"))
 	}
 	t := &FuncTicker{}
 	if d <= time.Millisecond && atomic.LoadInt64(&count) < maxCount {
@@ -77,7 +76,6 @@ func NewFuncTicker(d time.Duration, f func()) *FuncTicker {
 			when:   when(d),
 			period: int64(d),
 			f:      f,
-			closed: make(chan bool, 1),
 		}
 		startTimer(&t.r)
 		return t

@@ -147,10 +147,12 @@ func (l *loop) runFunc(now time.Time) bool {
 			break
 		}
 		top := l.sorted.Top()
-		score, f := top.Value().(timerFunc)(now)
+		score, r := top.Value().(timerFunc)(now)
 		if score > 0 {
 			ss = append(ss, score)
-			fs = append(fs, f)
+			fs = append(fs, r.timerFunc)
+		} else {
+			l.unregister(r)
 		}
 	}
 	for i, score := range ss {

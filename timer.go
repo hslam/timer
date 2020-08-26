@@ -17,14 +17,13 @@ const (
 	Hour                      = 60 * Minute
 )
 
-type timerFunc func(now time.Time) (score int64, f timerFunc)
+type timerFunc func(now time.Time) (score int64, r *runtimeTimer)
 
 type runtimeTimer struct {
 	tick      bool
 	arg       chan time.Time
 	work      bool
-	stop      bool
-	closed    chan bool
+	closed    bool
 	when      int64
 	period    int64
 	f         func()
@@ -34,15 +33,14 @@ type runtimeTimer struct {
 
 func (r *runtimeTimer) Start() {
 	r.work = true
-	r.stop = false
-	if r.closed == nil {
-		r.closed = make(chan bool, 1)
-	}
-	r.timerFunc = func(now time.Time) (score int64, f timerFunc) {
+	r.timerFunc = func(now time.Time) (int64, *runtimeTimer) {
 		defer func() {
 			if err := recover(); err != nil {
 			}
 		}()
+		if r.closed {
+			return -1, r
+		}
 		r.count += 1
 		if r.f != nil && r.work {
 			r.work = false
@@ -63,17 +61,10 @@ func (r *runtimeTimer) Start() {
 				r.arg <- now
 			}()
 		}
-		if r.tick && !r.stop {
-			return r.when + r.count*int64(r.period), r.timerFunc
+		if r.tick && !r.closed {
+			return r.when + r.count*int64(r.period), r
 		} else {
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-					}
-				}()
-				r.closed <- true
-			}()
-			return -1, nil
+			return -1, r
 		}
 	}
 	getLoop(time.Duration(r.period)).Register(r)
@@ -85,32 +76,12 @@ func (r *runtimeTimer) Stop() bool {
 		if err := recover(); err != nil {
 		}
 	}()
-	defer func() {
-		defer func() {
-			if err := recover(); err != nil {
-			}
-		}()
-		getLoop(time.Duration(r.period)).Unregister(r)
-	}()
-	defer func() {
-		defer func() {
-			if err := recover(); err != nil {
-			}
-		}()
-		if r.closed != nil {
-			close(r.closed)
-		}
-	}()
-	if r.stop == true {
+	if r.closed {
 		return true
 	}
-	r.stop = true
-	select {
-	case <-r.closed:
-		return true
-	case <-time.After(time.Second):
-		return false
-	}
+	r.closed = true
+	getLoop(time.Duration(r.period)).Unregister(r)
+	return true
 }
 
 func startTimer(r *runtimeTimer) {
@@ -122,9 +93,7 @@ func stopTimer(r *runtimeTimer) bool {
 }
 
 func After(d time.Duration) <-chan time.Time {
-	timer := NewTimer(d)
-	defer stopTimer(&timer.r)
-	return timer.C
+	return NewTimer(d).C
 }
 
 type Timer struct {
@@ -143,35 +112,38 @@ func NewTimer(d time.Duration) *Timer {
 			when:   when(d),
 			period: int64(d),
 			arg:    c,
-			closed: make(chan bool, 1),
 		},
 	}
 	startTimer(&r.r)
 	return r
 }
 
-func (r *Timer) Stop() bool {
+func (t *Timer) Stop() bool {
 	defer func() {
 		defer func() {
 			if err := recover(); err != nil {
 			}
 		}()
-		if r.r.arg != nil {
-			close(r.r.arg)
+		if t.r.arg != nil {
+			close(t.r.arg)
 		}
 	}()
-	return stopTimer(&r.r)
+	return stopTimer(&t.r)
 }
 
-func (r *Timer) Reset(d time.Duration) bool {
+func (t *Timer) Reset(d time.Duration) bool {
 	if d < time.Microsecond {
-		panic(errors.New("non-positive interval for NewTicker"))
+		panic(errors.New("non-positive interval for Reset"))
 	}
 	w := when(d)
-	active := stopTimer(&r.r)
-	r.r.when = w
-	r.r.period = int64(d)
-	startTimer(&r.r)
+	r := t.r
+	active := stopTimer(&r)
+	t.r = runtimeTimer{
+		when:   w,
+		period: int64(d),
+		arg:    r.arg,
+	}
+	startTimer(&t.r)
 	return active
 }
 
