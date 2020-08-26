@@ -4,6 +4,7 @@
 package timer
 
 import (
+	"sync/atomic"
 	"time"
 )
 
@@ -11,7 +12,7 @@ type funcTimer struct {
 	d      time.Duration
 	when   int64
 	done   chan struct{}
-	closed bool
+	closed int32
 	f      func()
 	count  int64
 }
@@ -65,10 +66,9 @@ endfor:
 }
 
 func (f *funcTimer) Stop() bool {
-	if f.closed {
+	if !atomic.CompareAndSwapInt32(&f.closed, 1, 2) {
 		return true
 	}
-	f.closed = true
 	close(f.done)
 	return true
 }

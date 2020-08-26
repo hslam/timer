@@ -6,6 +6,7 @@ package timer
 import (
 	"github.com/hslam/sortedlist"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -89,7 +90,7 @@ type loop struct {
 	m      map[*runtimeTimer]bool
 	d      time.Duration
 	done   chan struct{}
-	closed bool
+	closed int32
 }
 
 func newLoop(d time.Duration) *loop {
@@ -194,10 +195,9 @@ endfor:
 }
 
 func (l *loop) Stop() bool {
-	if l.closed {
+	if !atomic.CompareAndSwapInt32(&l.closed, 0, 1) {
 		return true
 	}
-	l.closed = true
 	close(l.done)
 	l.m = nil
 	return true

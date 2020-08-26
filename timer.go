@@ -5,6 +5,7 @@ package timer
 
 import (
 	"errors"
+	"sync/atomic"
 	"time"
 )
 
@@ -23,7 +24,7 @@ type runtimeTimer struct {
 	tick      bool
 	arg       chan time.Time
 	work      bool
-	closed    bool
+	closed    int32
 	when      int64
 	period    int64
 	f         func()
@@ -38,7 +39,7 @@ func (r *runtimeTimer) Start() {
 			if err := recover(); err != nil {
 			}
 		}()
-		if r.closed {
+		if atomic.LoadInt32(&r.closed) > 0 {
 			return -1, r
 		}
 		r.count += 1
@@ -61,7 +62,7 @@ func (r *runtimeTimer) Start() {
 				r.arg <- now
 			}()
 		}
-		if r.tick && !r.closed {
+		if r.tick && atomic.LoadInt32(&r.closed) == 0 {
 			return r.when + r.count*int64(r.period), r
 		} else {
 			return -1, r
@@ -76,10 +77,9 @@ func (r *runtimeTimer) Stop() bool {
 		if err := recover(); err != nil {
 		}
 	}()
-	if r.closed {
+	if !atomic.CompareAndSwapInt32(&r.closed, 0, 1) {
 		return true
 	}
-	r.closed = true
 	getLoop(time.Duration(r.period)).Unregister(r)
 	return true
 }

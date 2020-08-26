@@ -92,7 +92,7 @@ func (t *FuncTicker) Tick(f func()) {
 
 func (t *FuncTicker) Stop() {
 	if t.funcType {
-		if !t.f.closed {
+		if atomic.CompareAndSwapInt32(&t.f.closed, 0, 1) {
 			atomic.AddInt64(&count, -1)
 		}
 		stopFuncTimer(&t.f)
