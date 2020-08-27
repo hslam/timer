@@ -18,7 +18,7 @@ func main() {
 			//todo
 		}
 	case "FuncTicker":
-		t := timer.NewFuncTicker(timer.Millisecond, nil)
+		t := timer.NewTicker(timer.Millisecond)
 		defer t.Stop()
 		t.Tick(func() {
 			//todo
