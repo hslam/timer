@@ -10,18 +10,24 @@ import (
 )
 
 func TestTimerSleep(t *testing.T) {
+	num := 1000
+	d := time.Millisecond
+	run := d * time.Duration(num)
+
 	startTime := time.Now().UnixNano()
-	for i := 0; i < 1000; i++ {
-		time.Sleep(time.Millisecond)
+	for i := 0; i < num; i++ {
+		time.Sleep(d)
 	}
 	runTime := time.Now().UnixNano() - startTime
+	ratioTime := float64(runTime-int64(run)) / float64(run)
+
 	startTimer := time.Now().UnixNano()
-	for i := 0; i < 1000; i++ {
-		Sleep(time.Millisecond)
+	for i := 0; i < num; i++ {
+		Sleep(d)
 	}
 	runTimer := time.Now().UnixNano() - startTimer
-	ratioTimer := float64(runTimer-int64(time.Second)) / float64(time.Second)
-	ratioTime := float64(runTime-int64(time.Second)) / float64(time.Second)
+	ratioTimer := float64(runTimer-int64(run)) / float64(run)
+
 	if ratioTimer > ratioTime && ratioTimer-ratioTime > 0.1 {
 		t.Errorf("error ratio Timer:%.2f Time:%.2f", ratioTimer, ratioTime)
 	}
@@ -35,23 +41,28 @@ func BenchmarkTimerSleep(b *testing.B) {
 }
 
 func TestTimerTicker(t *testing.T) {
-	timeTicker := time.NewTicker(time.Millisecond)
+	num := 1000
+	d := time.Millisecond
+	timeTicker := time.NewTicker(d)
+	run := d * time.Duration(num)
+
 	startTime := time.Now().UnixNano()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < num; i++ {
 		<-timeTicker.C
 	}
 	runTime := time.Now().UnixNano() - startTime
-	defer timeTicker.Stop()
+	timeTicker.Stop()
+	ratioTime := float64(runTime-int64(run)) / float64(run)
 
-	timerTicker := NewTicker(time.Millisecond)
+	timerTicker := NewTicker(d)
 	startTimer := time.Now().UnixNano()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < num; i++ {
 		<-timerTicker.C
 	}
 	runTimer := time.Now().UnixNano() - startTimer
-	defer timerTicker.Stop()
-	ratioTimer := float64(runTimer-int64(time.Second)) / float64(time.Second)
-	ratioTime := float64(runTime-int64(time.Second)) / float64(time.Second)
+	timerTicker.Stop()
+	ratioTimer := float64(runTimer-int64(run)) / float64(run)
+
 	if math.Abs(ratioTimer-ratioTime) > 0.1 || math.Abs(ratioTimer) > 0.1 {
 		t.Errorf("error ratio Timer:%.2f Time:%.2f", ratioTimer, ratioTime)
 	}

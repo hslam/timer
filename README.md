@@ -1,5 +1,5 @@
 # timer
-Package timer provides functionality for measuring time. Much lower CPU overhead when using over a thousand timers. if using use_cgo tags that %CPU in top will be lower during the idle period of system.
+Package timer provides functionality for measuring time. Much lower CPU overhead when using use_cgo tags during the idle period of system.
 
 ## Feature
 * cgo/go
