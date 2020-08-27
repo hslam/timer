@@ -53,7 +53,8 @@ func (r *runtimeTimer) Start() {
 				r.f()
 				r.work = true
 			}()
-		} else if r.arg != nil && len(r.arg) == 0 {
+		}
+		if len(r.arg) == 0 {
 			r.arg <- now
 		}
 		if r.tick && atomic.LoadInt32(&r.closed) == 0 {
