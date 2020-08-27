@@ -68,7 +68,7 @@ func getLoopInstance(instance *loopInstance, d time.Duration) *loop {
 			idleTime := min(maxIdleTime, max(minIdleTime, instance.l.d*3))
 			var lastIdle = time.Now()
 			for {
-				if len(instance.l.m) > 0 {
+				if instance.l.Length() > 0 {
 					lastIdle = time.Now()
 				}
 				if lastIdle.Add(idleTime).Before(time.Now()) {
@@ -103,24 +103,35 @@ func newLoop(d time.Duration) *loop {
 	go l.run()
 	return l
 }
+
+func (l *loop) Length() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return len(l.m)
+}
+
 func (l *loop) Register(r *runtimeTimer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.register(r)
 }
+
 func (l *loop) register(r *runtimeTimer) {
 	l.m[r] = true
 }
+
 func (l *loop) Unregister(r *runtimeTimer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.unregister(r)
 }
+
 func (l *loop) unregister(r *runtimeTimer) {
 	if _, ok := l.m[r]; ok {
 		delete(l.m, r)
 	}
 }
+
 func (l *loop) AddFunc(score int64, f timerFunc) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
