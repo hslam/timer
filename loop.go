@@ -87,7 +87,6 @@ func getLoopInstance(instance *loopInstance, d time.Duration) *loop {
 type loop struct {
 	mu     sync.RWMutex
 	sorted *sortedlist.SortedList
-	m      map[*runtimeTimer]bool
 	d      time.Duration
 	done   chan struct{}
 	closed int32
@@ -97,7 +96,6 @@ func newLoop(d time.Duration) *loop {
 	l := &loop{
 		d:      d,
 		sorted: sortedlist.New(sortedlist.LessInt64),
-		m:      make(map[*runtimeTimer]bool),
 		done:   make(chan struct{}, 1),
 	}
 	go l.run()
@@ -107,29 +105,7 @@ func newLoop(d time.Duration) *loop {
 func (l *loop) Length() int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return len(l.m)
-}
-
-func (l *loop) Register(r *runtimeTimer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.register(r)
-}
-
-func (l *loop) register(r *runtimeTimer) {
-	l.m[r] = true
-}
-
-func (l *loop) Unregister(r *runtimeTimer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.unregister(r)
-}
-
-func (l *loop) unregister(r *runtimeTimer) {
-	if _, ok := l.m[r]; ok {
-		delete(l.m, r)
-	}
+	return l.sorted.Length()
 }
 
 func (l *loop) AddFunc(score int64, f timerFunc) {
@@ -159,12 +135,10 @@ func (l *loop) runFunc(now time.Time) bool {
 			break
 		}
 		top := l.sorted.Top()
-		score, r := top.Value().(timerFunc)(now)
+		score, f := top.Value().(timerFunc)(now)
 		if score > 0 {
 			ss = append(ss, score)
-			fs = append(fs, r.timerFunc)
-		} else {
-			l.unregister(r)
+			fs = append(fs, f)
 		}
 	}
 	for i, score := range ss {
@@ -210,6 +184,5 @@ func (l *loop) Stop() bool {
 		return true
 	}
 	close(l.done)
-	l.m = nil
 	return true
 }

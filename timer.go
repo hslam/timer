@@ -18,7 +18,7 @@ const (
 	Hour                      = 60 * Minute
 )
 
-type timerFunc func(now time.Time) (score int64, r *runtimeTimer)
+type timerFunc func(now time.Time) (score int64, f timerFunc)
 
 type runtimeTimer struct {
 	tick      bool
@@ -34,13 +34,13 @@ type runtimeTimer struct {
 
 func (r *runtimeTimer) Start() {
 	r.work = true
-	r.timerFunc = func(now time.Time) (int64, *runtimeTimer) {
+	r.timerFunc = func(now time.Time) (int64, timerFunc) {
 		defer func() {
 			if err := recover(); err != nil {
 			}
 		}()
 		if atomic.LoadInt32(&r.closed) > 0 {
-			return -1, r
+			return -1, nil
 		}
 		r.count += 1
 		if r.f != nil && r.work {
@@ -57,12 +57,11 @@ func (r *runtimeTimer) Start() {
 			r.arg <- now
 		}
 		if r.tick && atomic.LoadInt32(&r.closed) == 0 {
-			return r.when + r.count*int64(r.period), r
+			return r.when + r.count*int64(r.period), r.timerFunc
 		} else {
-			return -1, r
+			return -1, nil
 		}
 	}
-	getLoop(time.Duration(r.period)).Register(r)
 	getLoop(time.Duration(r.period)).AddFunc(r.when, r.timerFunc)
 }
 
@@ -74,7 +73,6 @@ func (r *runtimeTimer) Stop() bool {
 	if !atomic.CompareAndSwapInt32(&r.closed, 0, 1) {
 		return true
 	}
-	getLoop(time.Duration(r.period)).Unregister(r)
 	return true
 }
 
