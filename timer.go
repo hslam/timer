@@ -54,13 +54,7 @@ func (r *runtimeTimer) Start() {
 				r.work = true
 			}()
 		} else if r.arg != nil && len(r.arg) == 0 {
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-					}
-				}()
-				r.arg <- now
-			}()
+			r.arg <- now
 		}
 		if r.tick && atomic.LoadInt32(&r.closed) == 0 {
 			return r.when + r.count*int64(r.period), r
