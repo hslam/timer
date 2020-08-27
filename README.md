@@ -1,20 +1,8 @@
 # timer
-A timer library reduced %CPU in top from 20-25% to 2-3% during the idle period of system.
-
-By writing a cgo function Sleep that calls C's usleep directly.
-
-Much lower CPU overhead when using timer.Ticker or timer.Sleep()
-
-System |func   |1 us   |100 us|1 ms
- ---- | ----- | ------  | ------  | ------
-go     |Ticker     |146.3% |54.0% |12%
-go     |Sleep      |130.7% |24.2% |7.9%
-cgo    |Ticker     |124.8% |22.5% |6.6%
-cgo    |FuncTicker |46.5%  |5.2%  |1.9%
-cgo    |Sleep      |45.6%  |4.6%  |1.6%
+Package timer provides functionality for measuring time. Much lower CPU overhead when using over a thousand timers. if using use_cgo tags that %CPU in top will be lower during the idle period of system.
 
 ## Feature
-* cgo
+* cgo/go
 * Ticker
 * FuncTicker
 * Timer
@@ -86,6 +74,11 @@ func main() {
 ```
 
 ### Build
+#### go
+```
+go build
+```
+#### cgo
 ```
 go build -tags=use_cgo
 ```

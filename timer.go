@@ -1,6 +1,7 @@
 // Copyright (c) 2019 Meng Huang (mhboy@outlook.com)
 // This package is licensed under a MIT license that can be found in the LICENSE file.
 
+// Package timer provides functionality for measuring time.
 package timer
 
 import (
