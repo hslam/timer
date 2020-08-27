@@ -34,7 +34,9 @@ type runtimeTimer struct {
 }
 
 func (r *runtimeTimer) Start() {
+	atomic.StoreInt32(&r.closed, 0)
 	r.work = true
+	r.count = 0
 	r.timerFunc = func(now time.Time) (int64, timerFunc) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -68,10 +70,6 @@ func (r *runtimeTimer) Start() {
 }
 
 func (r *runtimeTimer) Stop() bool {
-	defer func() {
-		if err := recover(); err != nil {
-		}
-	}()
 	if !atomic.CompareAndSwapInt32(&r.closed, 0, 1) {
 		return true
 	}
@@ -127,13 +125,9 @@ func (t *Timer) Reset(d time.Duration) bool {
 		panic(errors.New("non-positive interval for Reset"))
 	}
 	w := when(d)
-	r := t.r
-	active := stopTimer(&r)
-	t.r = runtimeTimer{
-		when:   w,
-		period: int64(d),
-		arg:    r.arg,
-	}
+	active := stopTimer(&t.r)
+	t.r.when = w
+	t.r.period = int64(d)
 	startTimer(&t.r)
 	return active
 }
