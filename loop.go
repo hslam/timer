@@ -186,3 +186,17 @@ func (l *loop) Stop() bool {
 	close(l.done)
 	return true
 }
+
+func min(a, b time.Duration) time.Duration {
+	if a <= b {
+		return a
+	}
+	return b
+}
+
+func max(a, b time.Duration) time.Duration {
+	if a >= b {
+		return a
+	}
+	return b
+}
