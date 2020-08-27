@@ -90,8 +90,9 @@ func After(d time.Duration) <-chan time.Time {
 }
 
 type Timer struct {
-	C <-chan time.Time
-	r runtimeTimer
+	C      <-chan time.Time
+	r      runtimeTimer
+	closed int32
 }
 
 func NewTimer(d time.Duration) *Timer {
@@ -112,16 +113,12 @@ func NewTimer(d time.Duration) *Timer {
 }
 
 func (t *Timer) Stop() bool {
-	defer func() {
-		defer func() {
-			if err := recover(); err != nil {
-			}
-		}()
-		if t.r.arg != nil {
-			close(t.r.arg)
-		}
-	}()
-	return stopTimer(&t.r)
+	if !atomic.CompareAndSwapInt32(&t.closed, 0, 1) {
+		return true
+	}
+	active := stopTimer(&t.r)
+	close(t.r.arg)
+	return active
 }
 
 func (t *Timer) Reset(d time.Duration) bool {
