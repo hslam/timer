@@ -22,7 +22,6 @@ const (
 type timerFunc func(now time.Time) (score int64, f timerFunc)
 
 type runtimeTimer struct {
-	tick      bool
 	arg       chan time.Time
 	work      bool
 	closed    int32
@@ -60,7 +59,7 @@ func (r *runtimeTimer) Start() {
 		if len(r.arg) == 0 {
 			r.arg <- now
 		}
-		if r.tick && atomic.LoadInt32(&r.closed) == 0 {
+		if r.period > 0 && atomic.LoadInt32(&r.closed) == 0 {
 			return r.when + r.count*int64(r.period), r.timerFunc
 		} else {
 			return -1, nil
@@ -102,9 +101,8 @@ func NewTimer(d time.Duration) *Timer {
 	r := &Timer{
 		C: c,
 		r: runtimeTimer{
-			when:   when(d),
-			period: int64(d),
-			arg:    c,
+			when: when(d),
+			arg:  c,
 		},
 	}
 	startTimer(&r.r)
@@ -127,7 +125,6 @@ func (t *Timer) Reset(d time.Duration) bool {
 	w := when(d)
 	active := stopTimer(&t.r)
 	t.r.when = w
-	t.r.period = int64(d)
 	startTimer(&t.r)
 	return active
 }

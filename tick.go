@@ -23,7 +23,6 @@ func NewTicker(d time.Duration) *Ticker {
 	t := &Ticker{
 		C: c,
 		r: runtimeTimer{
-			tick:   true,
 			when:   when(d),
 			period: int64(d),
 			arg:    c,
