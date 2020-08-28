@@ -29,13 +29,11 @@ type runtimeTimer struct {
 	period    int64
 	f         func()
 	timerFunc timerFunc
-	count     int64
 }
 
 func (r *runtimeTimer) Start() {
 	atomic.StoreInt32(&r.closed, 0)
 	r.work = true
-	r.count = 0
 	r.timerFunc = func(now time.Time) (int64, timerFunc) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -44,7 +42,6 @@ func (r *runtimeTimer) Start() {
 		if atomic.LoadInt32(&r.closed) > 0 {
 			return -1, nil
 		}
-		r.count += 1
 		if r.f != nil && r.work {
 			r.work = false
 			go func() {
@@ -60,7 +57,8 @@ func (r *runtimeTimer) Start() {
 			r.arg <- now
 		}
 		if r.period > 0 && atomic.LoadInt32(&r.closed) == 0 {
-			return r.when + r.count*int64(r.period), r.timerFunc
+			r.when += r.period
+			return r.when, r.timerFunc
 		} else {
 			return -1, nil
 		}
