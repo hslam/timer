@@ -26,7 +26,7 @@ var (
 )
 
 func newloopInstance() *loopInstance {
-	return &loopInstance{once: &sync.Once{}}
+	return &loopInstance{}
 }
 
 func getLoop(d time.Duration) *loop {
@@ -57,30 +57,29 @@ func selectLoop(d time.Duration) *loop {
 }
 
 type loopInstance struct {
-	once *sync.Once
-	l    *loop
+	created int32
+	l       *loop
 }
 
 func getLoopInstance(instance *loopInstance, d time.Duration) *loop {
-	instance.once.Do(func() {
-		instance.l = newLoop(d)
-		go func(instance *loopInstance) {
-			idleTime := min(maxIdleTime, max(minIdleTime, instance.l.d*3))
+	if atomic.CompareAndSwapInt32(&instance.created, 0, 1) {
+		l := newLoop(d)
+		instance.l = l
+		go func(instance *loopInstance, l *loop) {
+			var idleTime = min(maxIdleTime, max(minIdleTime, l.d*3))
 			var lastIdle = time.Now()
 			for {
-				if instance.l.Length() > 0 {
+				if l.Length() > 0 {
 					lastIdle = time.Now()
-				}
-				if lastIdle.Add(idleTime).Before(time.Now()) {
-					instance.l.Stop()
-					instance.l = nil
-					instance.once = &sync.Once{}
+				} else if lastIdle.Add(idleTime).Before(time.Now()) {
+					atomic.StoreInt32(&instance.created, 0)
+					l.Stop()
 					break
 				}
 				Sleep(time.Second)
 			}
-		}(instance)
-	})
+		}(instance, l)
+	}
 	return instance.l
 }
 
