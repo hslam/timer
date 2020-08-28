@@ -108,25 +108,23 @@ func (l *loop) Length() int {
 	return l.sorted.Length()
 }
 
-func (l *loop) AddFunc(score int64, f timerFunc) {
+func (l *loop) AddTimer(r *runtimeTimer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.addFunc(score, f)
+	l.addTimer(r)
 }
 
-func (l *loop) RunFunc(now time.Time) bool {
+func (l *loop) RunFunc(now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.runFunc(now)
+	l.runFunc(now)
 }
 
-func (l *loop) addFunc(score int64, f timerFunc) {
-	l.sorted.Insert(score, f)
+func (l *loop) addTimer(r *runtimeTimer) {
+	l.sorted.Insert(r.when, r)
 }
 
-func (l *loop) runFunc(now time.Time) bool {
-	ss := make([]int64, 0)
-	fs := make([]timerFunc, 0)
+func (l *loop) runFunc(now time.Time) {
 	for {
 		if l.sorted.Length() < 1 {
 			break
@@ -135,19 +133,10 @@ func (l *loop) runFunc(now time.Time) bool {
 			break
 		}
 		top := l.sorted.Top()
-		score, f := top.Value().(timerFunc)(now)
-		if score > 0 {
-			ss = append(ss, score)
-			fs = append(fs, f)
+		r := top.Value().(*runtimeTimer)
+		if r.timerFunc(now) {
+			l.addTimer(r)
 		}
-	}
-	for i, score := range ss {
-		l.addFunc(score, fs[i])
-	}
-	if len(ss) > 0 {
-		return true
-	} else {
-		return false
 	}
 }
 
