@@ -25,15 +25,17 @@ func NewTicker(d time.Duration) *Ticker {
 		r: runtimeTimer{
 			when:   when(d),
 			period: int64(d),
-			arg:    c,
+			f: func(arg interface{}) {
+				select {
+				case arg.(chan time.Time) <- time.Now():
+				default:
+				}
+			},
+			arg: c,
 		},
 	}
 	startTimer(&t.r)
 	return t
-}
-
-func (t *Ticker) Tick(f func()) {
-	t.r.f = f
 }
 
 func (t *Ticker) Stop() {
@@ -41,7 +43,9 @@ func (t *Ticker) Stop() {
 		return
 	}
 	stopTimer(&t.r)
-	close(t.r.arg)
+	if c, ok := t.r.arg.(chan time.Time); ok {
+		close(c)
+	}
 }
 
 func Tick(d time.Duration) <-chan time.Time {
@@ -49,4 +53,22 @@ func Tick(d time.Duration) <-chan time.Time {
 		return nil
 	}
 	return NewTicker(d).C
+}
+
+func TickFunc(d time.Duration, f func()) *Ticker {
+	if d < time.Microsecond {
+		panic(errors.New("non-positive interval for TickFunc"))
+	}
+	t := &Ticker{
+		r: runtimeTimer{
+			when:   when(d),
+			period: int64(d),
+			f: func(arg interface{}) {
+				go arg.(func())()
+			},
+			arg: f,
+		},
+	}
+	startTimer(&t.r)
+	return t
 }

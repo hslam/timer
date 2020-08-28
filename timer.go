@@ -20,18 +20,16 @@ const (
 )
 
 type runtimeTimer struct {
-	arg       chan time.Time
-	work      bool
 	closed    int32
 	when      int64
 	period    int64
-	f         func()
+	f         func(interface{})
+	arg       interface{}
 	timerFunc func(now time.Time) (tick bool)
 }
 
 func (r *runtimeTimer) Start() {
 	atomic.StoreInt32(&r.closed, 0)
-	r.work = true
 	r.timerFunc = func(now time.Time) bool {
 		defer func() {
 			if err := recover(); err != nil {
@@ -40,20 +38,7 @@ func (r *runtimeTimer) Start() {
 		if atomic.LoadInt32(&r.closed) > 0 {
 			return false
 		}
-		if r.f != nil && r.work {
-			r.work = false
-			go func() {
-				defer func() {
-					if err := recover(); err != nil {
-					}
-				}()
-				r.f()
-				r.work = true
-			}()
-		}
-		if len(r.arg) == 0 {
-			r.arg <- now
-		}
+		r.f(r.arg)
 		if r.period > 0 && atomic.LoadInt32(&r.closed) == 0 {
 			r.when += r.period
 			return true
@@ -83,6 +68,23 @@ func After(d time.Duration) <-chan time.Time {
 	return NewTimer(d).C
 }
 
+func AfterFunc(d time.Duration, f func()) *Timer {
+	if d < time.Microsecond {
+		panic(errors.New("non-positive interval for AfterFunc"))
+	}
+	t := &Timer{
+		r: runtimeTimer{
+			when: when(d),
+			f: func(arg interface{}) {
+				go arg.(func())()
+			},
+			arg: f,
+		},
+	}
+	startTimer(&t.r)
+	return t
+}
+
 type Timer struct {
 	C      <-chan time.Time
 	r      runtimeTimer
@@ -98,7 +100,13 @@ func NewTimer(d time.Duration) *Timer {
 		C: c,
 		r: runtimeTimer{
 			when: when(d),
-			arg:  c,
+			f: func(arg interface{}) {
+				select {
+				case arg.(chan time.Time) <- time.Now():
+				default:
+				}
+			},
+			arg: c,
 		},
 	}
 	startTimer(&r.r)
@@ -110,7 +118,9 @@ func (t *Timer) Stop() bool {
 		return true
 	}
 	active := stopTimer(&t.r)
-	close(t.r.arg)
+	if c, ok := t.r.arg.(chan time.Time); ok {
+		close(c)
+	}
 	return active
 }
 
