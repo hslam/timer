@@ -17,12 +17,11 @@ func main() {
 		for range t.C {
 			//todo
 		}
-	case "FuncTicker":
-		t := timer.NewTicker(timer.Millisecond)
-		defer t.Stop()
-		t.Tick(func() {
+	case "TickFunc":
+		t := timer.TickFunc(timer.Millisecond, func() {
 			//todo
 		})
+		defer t.Stop()
 		select {}
 	case "Timer":
 		t := timer.NewTimer(timer.Millisecond)
@@ -44,6 +43,6 @@ func main() {
 			}
 		}
 	default:
-		fmt.Println("use Ticker,FuncTicker,Timer,Sleep or After")
+		fmt.Println("use Ticker, TickFunc, Timer, Sleep or After")
 	}
 }
