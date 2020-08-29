@@ -13,12 +13,6 @@ import (
 	"time"
 )
 
-const (
-	ALPHA = 0.8
-	BETA  = 1.6
-	//defaultMaxSleep	C.uint = 19
-)
-
 var Tag = "use_cgo"
 
 func Sleep(d time.Duration) {

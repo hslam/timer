@@ -19,48 +19,11 @@ const (
 	Hour                      = 60 * Minute
 )
 
-type runtimeTimer struct {
-	closed    int32
-	when      int64
-	period    int64
-	f         func(interface{})
-	arg       interface{}
-	timerFunc func(now time.Time) (tick bool)
-}
-
-func (r *runtimeTimer) Start() {
-	atomic.StoreInt32(&r.closed, 0)
-	r.timerFunc = func(now time.Time) bool {
-		defer func() {
-			if err := recover(); err != nil {
-			}
-		}()
-		if atomic.LoadInt32(&r.closed) > 0 {
-			return false
-		}
-		r.f(r.arg)
-		if r.period > 0 && atomic.LoadInt32(&r.closed) == 0 {
-			r.when += r.period
-			return true
-		} else {
-			return false
-		}
-	}
-	getLoop(time.Duration(r.period)).AddTimer(r)
-}
-
-func (r *runtimeTimer) Stop() bool {
-	if !atomic.CompareAndSwapInt32(&r.closed, 0, 1) {
-		return true
-	}
-	return true
-}
-
-func startTimer(r *runtimeTimer) {
+func startTimer(r *timer) {
 	r.Start()
 }
 
-func stopTimer(r *runtimeTimer) bool {
+func stopTimer(r *timer) bool {
 	return r.Stop()
 }
 
@@ -73,7 +36,7 @@ func AfterFunc(d time.Duration, f func()) *Timer {
 		panic(errors.New("non-positive interval for AfterFunc"))
 	}
 	t := &Timer{
-		r: runtimeTimer{
+		r: timer{
 			when: when(d),
 			f: func(arg interface{}) {
 				go arg.(func())()
@@ -87,7 +50,7 @@ func AfterFunc(d time.Duration, f func()) *Timer {
 
 type Timer struct {
 	C      <-chan time.Time
-	r      runtimeTimer
+	r      timer
 	closed int32
 }
 
@@ -98,7 +61,7 @@ func NewTimer(d time.Duration) *Timer {
 	c := make(chan time.Time, 1)
 	r := &Timer{
 		C: c,
-		r: runtimeTimer{
+		r: timer{
 			when: when(d),
 			f: func(arg interface{}) {
 				select {

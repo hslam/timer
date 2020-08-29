@@ -11,7 +11,7 @@ import (
 
 type Ticker struct {
 	C      <-chan time.Time
-	r      runtimeTimer
+	r      timer
 	closed int32
 }
 
@@ -22,7 +22,7 @@ func NewTicker(d time.Duration) *Ticker {
 	c := make(chan time.Time, 1)
 	t := &Ticker{
 		C: c,
-		r: runtimeTimer{
+		r: timer{
 			when:   when(d),
 			period: int64(d),
 			f: func(arg interface{}) {
@@ -60,7 +60,7 @@ func TickFunc(d time.Duration, f func()) *Ticker {
 		panic(errors.New("non-positive interval for TickFunc"))
 	}
 	t := &Ticker{
-		r: runtimeTimer{
+		r: timer{
 			when:   when(d),
 			period: int64(d),
 			f: func(arg interface{}) {
