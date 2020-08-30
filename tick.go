@@ -59,14 +59,24 @@ func TickFunc(d time.Duration, f func()) *Ticker {
 	if d < time.Microsecond {
 		panic(errors.New("non-positive interval for TickFunc"))
 	}
+	type tickFunc struct {
+		f     func()
+		count int32
+	}
 	t := &Ticker{
 		r: timer{
 			when:   when(d),
 			period: int64(d),
 			f: func(arg interface{}) {
-				go arg.(func())()
+				tick := arg.(*tickFunc)
+				if atomic.CompareAndSwapInt32(&tick.count, 0, 1) {
+					go func(tick *tickFunc) {
+						tick.f()
+						atomic.StoreInt32(&tick.count, 0)
+					}(tick)
+				}
 			},
-			arg: f,
+			arg: &tickFunc{f: f},
 		},
 	}
 	startTimer(&t.r)
