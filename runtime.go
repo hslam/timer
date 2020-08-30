@@ -21,17 +21,17 @@ var (
 )
 
 type timer struct {
-	closed    int32
-	when      int64
-	period    int64
-	f         func(interface{})
-	arg       interface{}
-	timerFunc func() (tick bool)
+	closed int32
+	when   int64
+	period int64
+	f      func(interface{})
+	arg    interface{}
+	event  func() (tick bool)
 }
 
 func (r *timer) Start() {
 	atomic.StoreInt32(&r.closed, 0)
-	r.timerFunc = func() bool {
+	r.event = func() bool {
 		if atomic.LoadInt32(&r.closed) > 0 {
 			return false
 		}
@@ -125,10 +125,10 @@ func (t *timersBucket) AddTimer(r *timer) {
 	}
 }
 
-func (t *timersBucket) RunFunc(now time.Time) {
+func (t *timersBucket) RunEvent(now time.Time) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.runFunc(now)
+	t.runEvent(now)
 }
 
 func (t *timersBucket) Front() int64 {
@@ -141,7 +141,7 @@ func (t *timersBucket) addTimer(r *timer) {
 	t.sorted.Insert(r.when, r)
 }
 
-func (t *timersBucket) runFunc(now time.Time) {
+func (t *timersBucket) runEvent(now time.Time) {
 	when := int64(0)
 	for {
 		if t.sorted.Length() < 1 {
@@ -152,7 +152,7 @@ func (t *timersBucket) runFunc(now time.Time) {
 		}
 		top := t.sorted.Top()
 		r := top.Value().(*timer)
-		if r.timerFunc() {
+		if tick := r.event(); tick {
 			t.addTimer(r)
 			when = r.when
 		}
@@ -177,6 +177,9 @@ func (t *timersBucket) run() {
 			case <-t.done:
 				goto endfor
 			case <-t.trigger:
+				if len(t.trigger) > 0 {
+					<-t.trigger
+				}
 			}
 			continue
 		}
@@ -210,7 +213,7 @@ func (t *timersBucket) run() {
 				}
 			}
 		}
-		t.RunFunc(time.Now())
+		t.RunEvent(time.Now())
 	}
 endfor:
 }
