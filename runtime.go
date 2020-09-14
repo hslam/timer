@@ -27,6 +27,7 @@ type timer struct {
 	f      func(interface{})
 	arg    interface{}
 	event  func() (tick bool)
+	bucket *timersBucket
 }
 
 func (r *timer) Start() {
@@ -43,15 +44,21 @@ func (r *timer) Start() {
 			return false
 		}
 	}
-	r.assignBucket().AddTimer(r)
+	if r.bucket == nil {
+		r.bucket = r.assignBucket()
+	}
+	r.bucket.GetInstance().AddTimer(r)
 }
 func (r *timer) assignBucket() *timersBucket {
 	id := r.when / 1000 % timersLen
-	return timers[id].GetInstance()
+	return &timers[id]
 }
 func (r *timer) Stop() bool {
 	if !atomic.CompareAndSwapInt32(&r.closed, 0, 1) {
 		return true
+	}
+	if r.bucket != nil {
+		r.bucket.GetInstance().DelTimer(r)
 	}
 	return true
 }
@@ -125,6 +132,12 @@ func (t *timersBucket) AddTimer(r *timer) {
 	}
 }
 
+func (t *timersBucket) DelTimer(r *timer) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.delTimer(r)
+}
+
 func (t *timersBucket) RunEvent(now time.Time) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -139,6 +152,10 @@ func (t *timersBucket) Front() int64 {
 
 func (t *timersBucket) addTimer(r *timer) {
 	t.sorted.Insert(r.when, r)
+}
+
+func (t *timersBucket) delTimer(r *timer) {
+	t.sorted.Remove(r.when, r)
 }
 
 func (t *timersBucket) runEvent(now time.Time) {
