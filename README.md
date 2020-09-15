@@ -1,5 +1,8 @@
 # timer
 [![GoDoc](https://godoc.org/github.com/hslam/timer?status.svg)](https://godoc.org/github.com/hslam/timer)
+[![Build Status](https://travis-ci.org/hslam/timer.svg?branch=master)](https://travis-ci.org/hslam/timer)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hslam/timer?v=d5613e5)](https://goreportcard.com/report/github.com/hslam/timer)
+[![LICENSE](https://img.shields.io/github/license/hslam/timer.svg?style=flat-square)](https://github.com/hslam/timer/blob/master/LICENSE)
 
 Package timer provides functionality for measuring time. Much lower CPU overhead when using use_cgo tags during the idle period of system.
 
