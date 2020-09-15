@@ -1,4 +1,6 @@
 # timer
+[![GoDoc](https://godoc.org/github.com/hslam/timer?status.svg)](https://godoc.org/github.com/hslam/timer)
+
 Package timer provides functionality for measuring time. Much lower CPU overhead when using use_cgo tags during the idle period of system.
 
 ## Feature
