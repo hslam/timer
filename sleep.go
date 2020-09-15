@@ -9,8 +9,11 @@ import (
 	"time"
 )
 
+// Tag is the sleep type.
 var Tag = "!use_cgo"
 
+// Sleep pauses the current goroutine for at least the duration d.
+// A negative or zero duration causes Sleep to return immediately.
 func Sleep(d time.Duration) {
 	time.Sleep(d)
 }

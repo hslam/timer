@@ -40,9 +40,8 @@ func (r *timer) Start() {
 		if r.period > 0 && atomic.LoadInt32(&r.closed) == 0 {
 			r.when += r.period
 			return true
-		} else {
-			return false
 		}
+		return false
 	}
 	if r.bucket == nil {
 		r.bucket = r.assignBucket()
