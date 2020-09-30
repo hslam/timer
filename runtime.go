@@ -90,12 +90,17 @@ func (t *timersBucket) GetInstance() *timersBucket {
 		t.lock.Unlock()
 		go func(t *timersBucket) {
 			for {
-				if t.lastIdle.Add(idleTime).Before(time.Now()) && len(t.pending) == 0 {
-					t.lock.Lock()
-					t.Stop()
-					t.created = false
-					t.lock.Unlock()
-					break
+				if t.lastIdle.Add(idleTime).Before(time.Now()) {
+					t.pmu.Lock()
+					if len(t.pending) == 0 {
+						t.pmu.Unlock()
+						t.lock.Lock()
+						t.Stop()
+						t.created = false
+						t.lock.Unlock()
+						break
+					}
+					t.pmu.Unlock()
 				}
 				Sleep(time.Second)
 			}
@@ -241,5 +246,6 @@ func (t *timersBucket) Stop() bool {
 	close(t.done)
 	close(t.trigger)
 	close(t.wait)
+	t.pending = nil
 	return true
 }
