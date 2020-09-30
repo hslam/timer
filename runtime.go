@@ -90,7 +90,7 @@ func (t *timersBucket) GetInstance() *timersBucket {
 		t.lock.Unlock()
 		go func(t *timersBucket) {
 			for {
-				if t.lastIdle.Add(idleTime).Before(time.Now()) {
+				if t.lastIdle.Add(idleTime).Before(time.Now()) && len(t.pending) == 0 {
 					t.lock.Lock()
 					t.Stop()
 					t.created = false
