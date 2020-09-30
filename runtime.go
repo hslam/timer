@@ -241,6 +241,5 @@ func (t *timersBucket) Stop() bool {
 	close(t.done)
 	close(t.trigger)
 	close(t.wait)
-	t.pending = nil
 	return true
 }

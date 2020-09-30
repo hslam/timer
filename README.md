@@ -91,7 +91,7 @@ go build -tags=use_cgo
 This package is licensed under a MIT license (Copyright (c) 2019 Meng Huang)
 
 
-### Authors
+### Author
 timer was written by Meng Huang.
 
 
