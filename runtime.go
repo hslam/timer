@@ -244,7 +244,5 @@ func (t *timersBucket) Stop() bool {
 		return true
 	}
 	close(t.done)
-	close(t.trigger)
-	close(t.wait)
 	return true
 }
