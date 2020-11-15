@@ -26,7 +26,7 @@ import "github.com/hslam/timer"
 ```
 ### Usage
 #### Example
-```
+```go
 package main
 
 import (
