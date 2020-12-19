@@ -1,6 +1,6 @@
 # timer
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/hslam/timer)](https://pkg.go.dev/github.com/hslam/timer)
-[![Build Status](https://travis-ci.org/hslam/timer.svg?branch=master)](https://travis-ci.org/hslam/timer)
+[![Build Status](https://github.com/hslam/timer/workflows/build/badge.svg)](https://github.com/hslam/timer/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hslam/timer)](https://goreportcard.com/report/github.com/hslam/timer)
 [![LICENSE](https://img.shields.io/github/license/hslam/timer.svg?style=flat-square)](https://github.com/hslam/timer/blob/master/LICENSE)
 
