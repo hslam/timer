@@ -5,6 +5,7 @@ package timer
 
 import (
 	"math"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -67,6 +68,126 @@ func TestTimerTicker(t *testing.T) {
 		t.Errorf("error ratio Timer:%.2f Time:%.2f", ratioTimer, ratioTime)
 	}
 	t.Log("timer.Ticker", runTimer, ",time.Ticker", runTime, ",ratioTimer", ratioTimer, ",ratioTime", ratioTime)
+	timerTicker.Stop()
+}
+
+func TestNewTicker(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Error()
+		}
+	}()
+	NewTicker(0)
+}
+
+func TestTick(t *testing.T) {
+	if Tick(0) != nil {
+		t.Error()
+	}
+	when := <-Tick(time.Millisecond)
+	if when.After(time.Now()) {
+		t.Error()
+	}
+}
+
+func TestTickFunc(t *testing.T) {
+	once := int32(0)
+	ch := make(chan struct{}, 1)
+	ticker := TickFunc(time.Millisecond, func() {
+		if atomic.CompareAndSwapInt32(&once, 0, 1) {
+			close(ch)
+		}
+	})
+	time.Sleep(time.Second)
+	<-ch
+	ticker.Stop()
+
+}
+
+func TestTickFuncMore(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Error()
+		}
+	}()
+	TickFunc(0, func() {
+
+	})
+}
+
+func TestRecoverTimer(t *testing.T) {
+	func() {
+		defer func() {
+			if err := recover(); err == nil {
+				t.Error()
+			}
+		}()
+		NewTimer(0)
+	}()
+	func() {
+		defer func() {
+			if err := recover(); err == nil {
+				t.Error()
+			}
+		}()
+		NewTimer(time.Millisecond).Reset(0)
+	}()
+	func() {
+		defer func() {
+			if err := recover(); err == nil {
+				t.Error()
+			}
+		}()
+		AfterFunc(0, func() {
+		})
+	}()
+}
+
+func TestTimer(t *testing.T) {
+	{
+		when := <-NewTimer(time.Millisecond).C
+		if when.After(time.Now()) {
+			t.Error()
+		}
+	}
+	{
+		when := <-After(time.Millisecond)
+		if when.After(time.Now()) {
+			t.Error()
+		}
+	}
+	{
+		timer := NewTimer(time.Millisecond)
+		timer.Reset(time.Millisecond)
+		timer.Stop()
+		timer.Stop()
+	}
+	{
+		once := int32(0)
+		ch := make(chan struct{}, 1)
+		timer := AfterFunc(time.Millisecond, func() {
+			if atomic.CompareAndSwapInt32(&once, 0, 1) {
+				close(ch)
+			}
+		})
+		<-ch
+		timer.r.Stop()
+		timer.Stop()
+	}
+	time.Sleep(time.Second * 3)
+	for _, b := range timers {
+		b.GetInstance().Stop()
+		b.GetInstance().Stop()
+	}
+}
+
+func TestWhen(t *testing.T) {
+	if when(0) < 0 {
+		t.Error()
+	}
+	if when(1<<63-1) < 0 {
+		t.Error()
+	}
 }
 
 //go test -v -bench=. -benchmem

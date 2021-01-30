@@ -112,12 +112,6 @@ func (t *timersBucket) GetInstance() *timersBucket {
 	return t
 }
 
-func (t *timersBucket) Length() int {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.sorted.Length()
-}
-
 func (t *timersBucket) AddTimer(r *timer) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
