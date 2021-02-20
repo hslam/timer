@@ -26,24 +26,3 @@ func Sleep(d time.Duration) {
 	duration = C.uint(int64(d) / 1000)
 	C.usleep(duration)
 }
-
-//func Sleep(d time.Duration) {
-//	if d < time.Microsecond {
-//		d=time.Microsecond
-//	}
-//	var duration C.uint
-//	duration=C.uint(int64(d)/1000)
-//	if duration>defaultMaxSleep{
-//		var sleep C.uint
-//		for {
-//			C.usleep(defaultMaxSleep)
-//			sleep+=defaultMaxSleep
-//			if duration-sleep<=defaultMaxSleep{
-//				C.usleep(duration-sleep)
-//				break
-//			}
-//		}
-//	}else {
-//		C.usleep(duration)
-//	}
-//}

@@ -189,31 +189,3 @@ func TestWhen(t *testing.T) {
 		t.Error()
 	}
 }
-
-//go test -v -bench=. -benchmem
-//=== RUN   TestTimerSleep
-//--- PASS: TestTimerSleep (2.88s)
-//timer_test.go:25: timer.Sleep() 1461301000 ,time.Sleep() 1413659000 ,ratioTimer-ratioTime 0.04764200000000002
-//=== RUN   TestTimerTicker
-//--- PASS: TestTimerTicker (2.00s)
-//timer_test.go:55: timer.Ticker 1001063000 ,time.Ticker 1000397000 ,ratioTimer 0.001063 ,ratioTime 0.000397
-//goos: darwin
-//goarch: amd64
-//pkg: github.com/hslam/timer
-//BenchmarkTimerSleep-4   	    1000	   1359823 ns/op	       0 B/op	       0 allocs/op
-//PASS
-//ok  	github.com/hslam/timer	6.373s
-
-//go test -v -bench=. -benchmem  -tags=use_cgo
-//=== RUN   TestTimerSleep
-//--- PASS: TestTimerSleep (2.79s)
-//timer_test.go:25: timer.Sleep() 1358244000 ,time.Sleep() 1430921000 ,ratioTimer-ratioTime -0.07267699999999999
-//=== RUN   TestTimerTicker
-//--- PASS: TestTimerTicker (2.00s)
-//timer_test.go:55: timer.Ticker 1001974000 ,time.Ticker 1000416000 ,ratioTimer 0.001974 ,ratioTime 0.000416
-//goos: darwin
-//goarch: amd64
-//pkg: github.com/hslam/timer
-//BenchmarkTimerSleep-4   	    1000	   1387910 ns/op	       0 B/op	       0 allocs/op
-//PASS
-//ok  	github.com/hslam/timer	6.329s
