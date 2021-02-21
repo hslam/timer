@@ -48,10 +48,12 @@ func (r *timer) Start() {
 	}
 	r.bucket.GetInstance().AddTimer(r)
 }
+
 func (r *timer) assignBucket() *timersBucket {
 	id := r.when / 1000 % timersLen
 	return &timers[id]
 }
+
 func (r *timer) Stop() bool {
 	if !atomic.CompareAndSwapInt32(&r.closed, 0, 1) {
 		return true
@@ -114,7 +116,6 @@ func (t *timersBucket) GetInstance() *timersBucket {
 
 func (t *timersBucket) AddTimer(r *timer) {
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	t.addTimer(r)
 	when := t.sorted.Rear().Prev().Value().(*timer).when
 	t.lastIdle = time.Unix(when/1000000000, when%1000000000)
@@ -128,24 +129,26 @@ func (t *timersBucket) AddTimer(r *timer) {
 	case t.trigger <- struct{}{}:
 	default:
 	}
+	t.mu.Unlock()
 }
 
 func (t *timersBucket) DelTimer(r *timer) {
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	t.delTimer(r)
+	t.mu.Unlock()
 }
 
 func (t *timersBucket) RunEvent(now time.Time) {
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	t.runEvent(now)
+	t.mu.Unlock()
 }
 
 func (t *timersBucket) Front() int64 {
 	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.front()
+	front := t.front()
+	t.mu.RUnlock()
+	return front
 }
 
 func (t *timersBucket) addTimer(r *timer) {
