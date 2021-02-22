@@ -33,13 +33,12 @@ type timer struct {
 func (r *timer) Start() {
 	atomic.StoreInt32(&r.closed, 0)
 	r.event = func() bool {
-		if atomic.LoadInt32(&r.closed) > 0 {
-			return false
-		}
-		r.f(r.arg)
-		if r.period > 0 && atomic.LoadInt32(&r.closed) == 0 {
-			r.when += r.period
-			return true
+		if atomic.LoadInt32(&r.closed) == 0 {
+			r.f(r.arg)
+			if r.period > 0 {
+				r.when += r.period
+				return true
+			}
 		}
 		return false
 	}
@@ -65,12 +64,10 @@ func (r *timer) Stop() bool {
 }
 
 type timersBucket struct {
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	created  bool
-	mu       sync.RWMutex
 	sorted   *sortedlist.SortedList
 	lastIdle time.Time
-	pmu      sync.Mutex
 	pending  map[int64]struct{}
 	trigger  chan struct{}
 	wait     chan struct{}
@@ -92,19 +89,17 @@ func (t *timersBucket) GetInstance() *timersBucket {
 		t.lock.Unlock()
 		go func(t *timersBucket) {
 			for {
+				Sleep(time.Second)
+				t.lock.Lock()
 				if t.lastIdle.Add(idleTime).Before(time.Now()) {
-					t.pmu.Lock()
-					if len(t.pending) == 0 {
-						t.pmu.Unlock()
-						t.lock.Lock()
+					if len(t.pending) == 0 && t.sorted.Length() == 0 {
 						t.Stop()
 						t.created = false
 						t.lock.Unlock()
 						break
 					}
-					t.pmu.Unlock()
 				}
-				Sleep(time.Second)
+				t.lock.Unlock()
 			}
 		}(t)
 		go t.run()
@@ -115,39 +110,34 @@ func (t *timersBucket) GetInstance() *timersBucket {
 }
 
 func (t *timersBucket) AddTimer(r *timer) {
-	t.mu.Lock()
+	t.lock.Lock()
 	t.addTimer(r)
 	when := t.sorted.Rear().Prev().Value().(*timer).when
 	t.lastIdle = time.Unix(when/1000000000, when%1000000000)
-	if t.sorted.Length() > 1 && t.sorted.Front().Value().(*timer) == r {
-		select {
-		case t.wait <- struct{}{}:
-		default:
-		}
+	first := t.sorted.Front().Value().(*timer) == r
+	t.lock.Unlock()
+	if first {
+		trigger(t.wait)
 	}
-	select {
-	case t.trigger <- struct{}{}:
-	default:
-	}
-	t.mu.Unlock()
+	trigger(t.trigger)
 }
 
 func (t *timersBucket) DelTimer(r *timer) {
-	t.mu.Lock()
+	t.lock.Lock()
 	t.delTimer(r)
-	t.mu.Unlock()
+	t.lock.Unlock()
 }
 
 func (t *timersBucket) RunEvent(now time.Time) {
-	t.mu.Lock()
+	t.lock.Lock()
 	t.runEvent(now)
-	t.mu.Unlock()
+	t.lock.Unlock()
 }
 
 func (t *timersBucket) Front() int64 {
-	t.mu.RLock()
+	t.lock.RLock()
 	front := t.front()
-	t.mu.RUnlock()
+	t.lock.RUnlock()
 	return front
 }
 
@@ -160,7 +150,6 @@ func (t *timersBucket) delTimer(r *timer) {
 }
 
 func (t *timersBucket) runEvent(now time.Time) {
-	when := int64(0)
 	for {
 		if t.sorted.Length() < 1 {
 			break
@@ -172,11 +161,7 @@ func (t *timersBucket) runEvent(now time.Time) {
 		r := top.Value().(*timer)
 		if tick := r.event(); tick {
 			t.addTimer(r)
-			when = r.when
 		}
-	}
-	if when > 0 {
-		t.lastIdle = time.Unix(when/1000000000, when%1000000000)
 	}
 }
 
@@ -195,19 +180,15 @@ func (t *timersBucket) run() {
 			case <-t.done:
 				goto endfor
 			case <-t.trigger:
-				if len(t.trigger) > 0 {
-					<-t.trigger
-				}
+				resetTrigger(t.trigger)
 			}
+			time.Sleep(time.Microsecond)
 			continue
 		}
 		if when > runtimeNano() {
-			t.pmu.Lock()
-			if _, ok := t.pending[when]; ok {
-				t.pmu.Unlock()
-			} else {
+			t.lock.Lock()
+			if _, ok := t.pending[when]; !ok {
 				t.pending[when] = struct{}{}
-				t.pmu.Unlock()
 				go func(when int64, t *timersBucket) {
 					delta := time.Duration(when - runtimeNano())
 					if delta > time.Microsecond {
@@ -217,19 +198,14 @@ func (t *timersBucket) run() {
 					case t.wait <- struct{}{}:
 					default:
 					}
-					t.pmu.Lock()
+					t.lock.Lock()
 					delete(t.pending, when)
-					t.pmu.Unlock()
+					t.lock.Unlock()
 				}(when, t)
 			}
-			select {
-			case <-t.done:
-				goto endfor
-			case <-t.wait:
-				if len(t.wait) > 0 {
-					<-t.wait
-				}
-			}
+			t.lock.Unlock()
+			<-t.wait
+			resetTrigger(t.wait)
 		}
 		t.RunEvent(time.Now())
 	}
@@ -237,9 +213,28 @@ endfor:
 }
 
 func (t *timersBucket) Stop() bool {
-	if !atomic.CompareAndSwapInt32(&t.closed, 0, 1) {
-		return true
+	if atomic.CompareAndSwapInt32(&t.closed, 0, 1) {
+		close(t.done)
 	}
-	close(t.done)
 	return true
+}
+
+func trigger(c chan struct{}) {
+	select {
+	case c <- struct{}{}:
+	default:
+	}
+}
+
+func resetTrigger(c chan struct{}) {
+	for len(c) > 0 {
+		resetTriggerOnce(c)
+	}
+}
+
+func resetTriggerOnce(c chan struct{}) {
+	select {
+	case <-c:
+	default:
+	}
 }

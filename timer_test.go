@@ -5,6 +5,7 @@ package timer
 
 import (
 	"math"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -180,11 +181,29 @@ func TestTimer(t *testing.T) {
 		timer.r.Stop()
 		timer.Stop()
 	}
-	time.Sleep(time.Second * 3)
-	for _, b := range timers {
-		b.GetInstance().Stop()
-		b.GetInstance().Stop()
+	end := time.Now().Add(time.Second * 6)
+	wg := sync.WaitGroup{}
+	for i := time.Duration(0); time.Now().Before(end); i++ {
+		wg.Add(1)
+		go func(v time.Duration) {
+			d := time.Now().Sub(end)
+			if -d-v > time.Microsecond {
+				<-NewTimer(-d - v).C
+			}
+			wg.Done()
+		}(i)
+		time.Sleep(time.Millisecond)
 	}
+	wg.Wait()
+	time.Sleep(idleTime * 2)
+}
+
+func TestTrigger(t *testing.T) {
+	c := make(chan struct{}, 1)
+	trigger(c)
+	trigger(c)
+	resetTrigger(c)
+	resetTriggerOnce(c)
 }
 
 func TestWhen(t *testing.T) {
