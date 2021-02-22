@@ -65,12 +65,10 @@ func (r *timer) Stop() bool {
 }
 
 type timersBucket struct {
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	created  bool
-	mu       sync.RWMutex
 	sorted   *sortedlist.SortedList
 	lastIdle time.Time
-	pmu      sync.Mutex
 	pending  map[int64]struct{}
 	trigger  chan struct{}
 	wait     chan struct{}
@@ -93,16 +91,14 @@ func (t *timersBucket) GetInstance() *timersBucket {
 		go func(t *timersBucket) {
 			for {
 				if t.lastIdle.Add(idleTime).Before(time.Now()) {
-					t.pmu.Lock()
-					if len(t.pending) == 0 {
-						t.pmu.Unlock()
-						t.lock.Lock()
+					t.lock.Lock()
+					if len(t.pending) == 0 && t.sorted.Length() == 0 {
 						t.Stop()
 						t.created = false
 						t.lock.Unlock()
 						break
 					}
-					t.pmu.Unlock()
+					t.lock.Unlock()
 				}
 				Sleep(time.Second)
 			}
@@ -115,7 +111,7 @@ func (t *timersBucket) GetInstance() *timersBucket {
 }
 
 func (t *timersBucket) AddTimer(r *timer) {
-	t.mu.Lock()
+	t.lock.Lock()
 	t.addTimer(r)
 	when := t.sorted.Rear().Prev().Value().(*timer).when
 	t.lastIdle = time.Unix(when/1000000000, when%1000000000)
@@ -129,25 +125,25 @@ func (t *timersBucket) AddTimer(r *timer) {
 	case t.trigger <- struct{}{}:
 	default:
 	}
-	t.mu.Unlock()
+	t.lock.Unlock()
 }
 
 func (t *timersBucket) DelTimer(r *timer) {
-	t.mu.Lock()
+	t.lock.Lock()
 	t.delTimer(r)
-	t.mu.Unlock()
+	t.lock.Unlock()
 }
 
 func (t *timersBucket) RunEvent(now time.Time) {
-	t.mu.Lock()
+	t.lock.Lock()
 	t.runEvent(now)
-	t.mu.Unlock()
+	t.lock.Unlock()
 }
 
 func (t *timersBucket) Front() int64 {
-	t.mu.RLock()
+	t.lock.RLock()
 	front := t.front()
-	t.mu.RUnlock()
+	t.lock.RUnlock()
 	return front
 }
 
@@ -202,12 +198,12 @@ func (t *timersBucket) run() {
 			continue
 		}
 		if when > runtimeNano() {
-			t.pmu.Lock()
+			t.lock.Lock()
 			if _, ok := t.pending[when]; ok {
-				t.pmu.Unlock()
+				t.lock.Unlock()
 			} else {
 				t.pending[when] = struct{}{}
-				t.pmu.Unlock()
+				t.lock.Unlock()
 				go func(when int64, t *timersBucket) {
 					delta := time.Duration(when - runtimeNano())
 					if delta > time.Microsecond {
@@ -217,9 +213,9 @@ func (t *timersBucket) run() {
 					case t.wait <- struct{}{}:
 					default:
 					}
-					t.pmu.Lock()
+					t.lock.Lock()
 					delete(t.pending, when)
-					t.pmu.Unlock()
+					t.lock.Unlock()
 				}(when, t)
 			}
 			select {
