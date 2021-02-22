@@ -84,13 +84,8 @@ func NewTimer(d time.Duration) *Timer {
 		C: c,
 		r: timer{
 			when: when(d),
-			f: func(arg interface{}) {
-				select {
-				case arg.(chan time.Time) <- time.Now():
-				default:
-				}
-			},
-			arg: c,
+			f:    f,
+			arg:  c,
 		},
 	}
 	startTimer(&r.r)
@@ -125,6 +120,13 @@ func (t *Timer) Reset(d time.Duration) bool {
 	t.r.when = w
 	startTimer(&t.r)
 	return active
+}
+
+func f(arg interface{}) {
+	select {
+	case arg.(chan time.Time) <- time.Now():
+	default:
+	}
 }
 
 func when(d time.Duration) int64 {

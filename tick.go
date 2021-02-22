@@ -32,13 +32,8 @@ func NewTicker(d time.Duration) *Ticker {
 		r: timer{
 			when:   when(d),
 			period: int64(d),
-			f: func(arg interface{}) {
-				select {
-				case arg.(chan time.Time) <- time.Now():
-				default:
-				}
-			},
-			arg: c,
+			f:      f,
+			arg:    c,
 		},
 	}
 	startTimer(&t.r)

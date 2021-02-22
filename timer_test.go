@@ -80,6 +80,12 @@ func TestNewTicker(t *testing.T) {
 	NewTicker(0)
 }
 
+func TestF(t *testing.T) {
+	c := make(chan time.Time, 1)
+	f(c)
+	f(c)
+}
+
 func TestTick(t *testing.T) {
 	if Tick(0) != nil {
 		t.Error()
